@@ -12,13 +12,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Telegram
+    | Telegram Configuration
     |--------------------------------------------------------------------------
     */
 
     'telegram' => [
-        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
-        'channel_id' => env('TELEGRAM_CHANNEL_ID'),
+
+        'api_id' => env('TELEGRAM_API_ID'),
+
+        'api_hash' => env('TELEGRAM_API_HASH'),
+
+        'session_path' => storage_path('telegram/sessions'),
+
     ],
 
 ];

@@ -100,10 +100,12 @@ public function forceDelete($id)
         ->where('user_id', Auth::id())
         ->firstOrFail();
 
-    $storage = new StorageManager();
+    // Delete the physical file
+    if (Storage::disk('public')->exists($file->file_path)) {
+        Storage::disk('public')->delete($file->file_path);
+    }
 
-    $storage->driver()->delete($file);
-
+    // Permanently delete the database record
     $file->forceDelete();
 
     return redirect()->route('trash')
