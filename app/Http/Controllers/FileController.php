@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\File;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
+use App\Services\Storage\StorageManager;
+use Illuminate\Support\Str;
 
 class FileController extends Controller
 {
@@ -21,39 +22,42 @@ class FileController extends Controller
         return view('files', compact('files'));
     }
 
-    /**
-     * Upload a new file.
-     */
-    public function upload(Request $request)
-    {
-        $request->validate([
-            'file' => 'required|max:51200',
-        ]);
+public function upload(Request $request)
+{
+    $request->validate([
+        'file' => 'required|max:51200',
+    ]);
 
-        $uploadedFile = $request->file('file');
+    $uploadedFile = $request->file('file');
 
-        $path = $uploadedFile->store('uploads', 'public');
+    $storage = new StorageManager();
 
-        File::create([
-            'user_id'       => Auth::id(),
-            'file_name'     => time().'_'.$uploadedFile->getClientOriginalName(),
-            'original_name' => $uploadedFile->getClientOriginalName(),
-            'file_path'     => $path,
-            'mime_type'     => $uploadedFile->getClientMimeType(),
-            'file_size'     => $uploadedFile->getSize(),
-        ]);
+    $result = $storage->driver()->upload($uploadedFile);
 
-        return redirect()->back()->with('success', 'File uploaded successfully!');
-    }
+    File::create([
+        'user_id' => Auth::id(),
+        'original_name' => $uploadedFile->getClientOriginalName(),
+        'stored_name' => $result['stored_name'],
+        'file_path' => $result['file_path'],
+        'telegram_file_id' => $result['telegram_file_id'],
+        'telegram_message_id' => $result['telegram_message_id'],
+        'storage_driver' => $result['storage_driver'],
+        'mime_type' => $uploadedFile->getClientMimeType(),
+        'file_size' => $uploadedFile->getSize(),
+        'checksum' => hash_file('sha256', $uploadedFile->getRealPath()),
+    ]);
+
+    return redirect()->back()->with('success', 'File uploaded successfully!');
+}
 public function download($id)
 {
     $file = File::where('id', $id)
         ->where('user_id', Auth::id())
         ->firstOrFail();
 
-    $path = storage_path('app/public/' . $file->file_path);
+    $storage = new StorageManager();
 
-    return response()->download($path, $file->original_name);
+    return $storage->driver()->download($file);
 }
 
 public function destroy($id)
@@ -96,12 +100,10 @@ public function forceDelete($id)
         ->where('user_id', Auth::id())
         ->firstOrFail();
 
-    // Delete the physical file
-    if (Storage::disk('public')->exists($file->file_path)) {
-        Storage::disk('public')->delete($file->file_path);
-    }
+    $storage = new StorageManager();
 
-    // Permanently delete the database record
+    $storage->driver()->delete($file);
+
     $file->forceDelete();
 
     return redirect()->route('trash')
