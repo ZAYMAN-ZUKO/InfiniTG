@@ -2,23 +2,25 @@
 
 namespace App\Services\Storage;
 
-use Illuminate\Http\UploadedFile;
 use App\Models\File;
+use Illuminate\Http\UploadedFile;
 
 interface StorageInterface
 {
     /**
-     * Upload a file to the storage provider.
+     * Upload a file.
      */
     public function upload(UploadedFile $file): array;
 
     /**
-     * Download a stored file.
+     * Download a file.
+     *
+     * Returns the full temporary file path.
      */
     public function download(File $file);
 
     /**
-     * Delete a stored file.
+     * Delete a file from storage.
      */
     public function delete(File $file): bool;
 }

@@ -4,87 +4,125 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\TelegramController;
 
-// Home
+/*
+|--------------------------------------------------------------------------
+| Home
+|--------------------------------------------------------------------------
+*/
+
 Route::view('/', 'index')->name('home');
 
-// Dashboard
-Route::get('/dashboard',[DashboardController::class,'index'])
+/*
+|--------------------------------------------------------------------------
+| Dashboard
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Files
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/files', [FileController::class, 'index'])
+        ->name('files');
+
+    Route::post('/upload', [FileController::class, 'upload'])
+        ->name('upload');
+
+    Route::get('/download/{id}', [FileController::class, 'download'])
+        ->name('download');
+
+    Route::delete('/delete/{id}', [FileController::class, 'destroy'])
+        ->name('delete');
+
+    Route::put('/restore/{id}', [FileController::class, 'restore'])
+        ->name('restore');
+
+    Route::delete('/force-delete/{id}', [FileController::class, 'forceDelete'])
+        ->name('forceDelete');
+
+    Route::put('/favorite/{id}', [FileController::class, 'toggleFavorite'])
+        ->name('favorite.toggle');
+
+    Route::put('/rename/{id}', [FileController::class, 'rename'])
+        ->name('rename');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Library
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/gallery', [FileController::class, 'gallery'])
+        ->name('gallery');
+Route::get('/preview/{id}', [FileController::class, 'preview'])
     ->middleware('auth')
-    ->name('dashboard');
+    ->name('preview');
 
-// Files
-Route::get('/files', [FileController::class, 'index'])
-    ->middleware('auth')
-    ->name('files');
+    Route::get('/favorites', [FileController::class, 'favorites'])
+        ->name('favorites');
 
-// Upload
-Route::post('/upload', [FileController::class, 'upload'])
-    ->middleware('auth')
-    ->name('upload');
+    Route::get('/recent', [FileController::class, 'recent'])
+        ->name('recent');
 
-// Download
-Route::get('/download/{id}', [FileController::class, 'download'])
-    ->middleware('auth')
-    ->name('download');
+    Route::get('/trash', [FileController::class, 'trash'])
+        ->name('trash');
 
-// Delete (Soft Delete)
-Route::delete('/delete/{id}', [FileController::class, 'destroy'])
-    ->middleware('auth')
-    ->name('delete');
+    Route::get('/search', [FileController::class, 'search'])
+        ->name('search');
 
+    /*
+    |--------------------------------------------------------------------------
+    | Settings
+    |--------------------------------------------------------------------------
+    */
 
-// Restore
-Route::put('/restore/{id}', [FileController::class, 'restore'])
-    ->middleware('auth')
-    ->name('restore');
+    Route::get('/settings', [SettingsController::class, 'index'])
+        ->name('settings');
 
-// Delete Forever
-Route::delete('/force-delete/{id}', [FileController::class, 'forceDelete'])
-    ->middleware('auth')
-    ->name('forceDelete');
+    /*
+    |--------------------------------------------------------------------------
+    | Telegram
+    |--------------------------------------------------------------------------
+    */
 
-// Toggle Favorite
-Route::put('/favorite/{id}', [FileController::class, 'toggleFavorite'])
-    ->middleware('auth')
-    ->name('favorite.toggle');
+    Route::post('/telegram/send-code', [TelegramController::class, 'sendCode'])
+        ->name('telegram.send-code');
 
+    Route::post('/telegram/verify-code', [TelegramController::class, 'verifyCode'])
+        ->name('telegram.verify-code');
 
-// Gallery
-Route::get('/gallery', [FileController::class, 'gallery'])
-    ->middleware('auth')
-    ->name('gallery');
+    Route::post('/telegram/verify-password', [TelegramController::class, 'verifyPassword'])
+        ->name('telegram.verify-password');
 
-// Favorites
-Route::get('/favorites', [FileController::class, 'favorites'])
-    ->middleware('auth')
-    ->name('favorites');
+    Route::post('/telegram/logout', [TelegramController::class, 'logout'])
+        ->name('telegram.logout');
 
-// Recent
-Route::get('/recent', [FileController::class, 'recent'])
-    ->middleware('auth')
-    ->name('recent');
-// Trash
-Route::get('/trash', [FileController::class, 'trash'])
-    ->middleware('auth')
-    ->name('trash');
+    Route::get('/telegram/me', [TelegramController::class, 'me'])
+        ->name('telegram.me');
 
+    /*
+    |--------------------------------------------------------------------------
+    | Development Routes
+    |--------------------------------------------------------------------------
+    */
 
+    Route::get('/telegram/upload-test', [TelegramController::class, 'uploadTest'])
+        ->name('telegram.upload-test');
+});
 
-// Settings
-Route::get('/settings', [SettingsController::class, 'index'])
-    ->middleware('auth')
-    ->name('settings');
+/*
+|--------------------------------------------------------------------------
+| Authentication
+|--------------------------------------------------------------------------
+*/
 
-// Search
-Route::get('/search', [FileController::class, 'search'])
-    ->middleware('auth')
-    ->name('search');
-
-// Rename File
-Route::put('/rename/{id}', [FileController::class, 'rename'])
-    ->middleware('auth')
-    ->name('rename');
-
-// Breeze Authentication Routes
 require __DIR__.'/auth.php';

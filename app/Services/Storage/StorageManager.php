@@ -3,7 +3,7 @@
 namespace App\Services\Storage;
 
 use InvalidArgumentException;
-
+use App\Models\File;
 class StorageManager
 {
     protected StorageInterface $driver;
@@ -25,4 +25,9 @@ class StorageManager
     {
         return $this->driver;
     }
+
+    public function download(File $file)
+{
+    return $this->driver()->download($file);
+}
 }

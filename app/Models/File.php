@@ -20,11 +20,13 @@ class File extends Model
         'file_path',
         'telegram_file_id',
         'telegram_message_id',
+        'telegram_chat_id',
         'storage_driver',
         'mime_type',
         'file_size',
         'checksum',
         'is_favorite',
+    
     ];
 
     /**
@@ -33,6 +35,7 @@ class File extends Model
     protected $casts = [
         'file_size' => 'integer',
         'telegram_message_id' => 'integer',
+        'telegram_chat_id' => 'integer',
         'is_favorite' => 'boolean',
         'deleted_at' => 'datetime',
     ];

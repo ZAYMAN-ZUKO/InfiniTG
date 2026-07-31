@@ -7,9 +7,9 @@
 <h1 style="margin-bottom:25px;">Settings</h1>
 
 @if(session('success'))
-    <p style="color:green; margin-bottom:20px;">
-        {{ session('success') }}
-    </p>
+<p style="color:green;margin-bottom:20px;">
+    {{ session('success') }}
+</p>
 @endif
 
 {{-- Profile --}}
@@ -18,19 +18,15 @@
     <h2 style="margin-bottom:20px;">👤 Profile</h2>
 
     <table>
-        <tbody>
+        <tr>
+            <td><strong>Name</strong></td>
+            <td>{{ $user->name }}</td>
+        </tr>
 
-            <tr>
-                <td><strong>Name</strong></td>
-                <td>{{ $user->name }}</td>
-            </tr>
-
-            <tr>
-                <td><strong>Email</strong></td>
-                <td>{{ $user->email }}</td>
-            </tr>
-
-        </tbody>
+        <tr>
+            <td><strong>Email</strong></td>
+            <td>{{ $user->email }}</td>
+        </tr>
     </table>
 
 </div>
@@ -41,29 +37,25 @@
     <h2 style="margin-bottom:20px;">💾 Storage Information</h2>
 
     <table>
-        <tbody>
+        <tr>
+            <td><strong>Total Files</strong></td>
+            <td>{{ $totalFiles }}</td>
+        </tr>
 
-            <tr>
-                <td><strong>Total Files</strong></td>
-                <td>{{ $totalFiles }}</td>
-            </tr>
+        <tr>
+            <td><strong>Storage Used</strong></td>
+            <td>{{ $storageUsed }} MB</td>
+        </tr>
 
-            <tr>
-                <td><strong>Storage Used</strong></td>
-                <td>{{ $storageUsed }} MB</td>
-            </tr>
+        <tr>
+            <td><strong>Favorite Files</strong></td>
+            <td>{{ $favoriteCount }}</td>
+        </tr>
 
-            <tr>
-                <td><strong>Favorite Files</strong></td>
-                <td>{{ $favoriteCount }}</td>
-            </tr>
-
-            <tr>
-                <td><strong>Trash Files</strong></td>
-                <td>{{ $trashCount }}</td>
-            </tr>
-
-        </tbody>
+        <tr>
+            <td><strong>Trash Files</strong></td>
+            <td>{{ $trashCount }}</td>
+        </tr>
     </table>
 
 </div>
@@ -71,34 +63,106 @@
 {{-- Telegram --}}
 <div class="panel">
 
-    <h2 style="margin-bottom:20px;">🤖 Telegram Integration</h2>
+    <h2 style="margin-bottom:20px;">📱 Telegram Account</h2>
 
-    <table>
-        <tbody>
+    @csrf
 
-            <tr>
-                <td><strong>Status</strong></td>
-                <td>
-                    <span style="color:red;">
-                        ● Not Connected
-                    </span>
-                </td>
-            </tr>
+    <label>Phone Number</label>
 
-            <tr>
-                <td><strong>Bot</strong></td>
-                <td>Not Configured</td>
-            </tr>
+    <input
+        type="text"
+        id="phone"
+        placeholder="+8801XXXXXXXXX"
+        style="width:100%;padding:10px;margin:10px 0 15px;"
+    >
 
-            <tr>
-                <td><strong>Channel</strong></td>
-                <td>Not Configured</td>
-            </tr>
+    <button
+        id="send-code-btn"
+        class="btn"
+        type="button"
+    >
+        Send Code
+    </button>
 
-        </tbody>
-    </table>
+    <hr style="margin:25px 0;">
+
+    <label>Verification Code</label>
+
+    <input
+        type="text"
+        id="telegram-code"
+        placeholder="Enter Telegram OTP"
+        style="width:100%;padding:10px;margin:10px 0 15px;"
+    >
+
+    <button
+        id="verify-code-btn"
+        class="btn"
+        type="button"
+    >
+        Verify Code
+    </button>
+
+    <pre id="response" style="margin-top:20px;"></pre>
 
 </div>
+
+<script>
+
+const csrf = "{{ csrf_token() }}";
+
+document.getElementById('send-code-btn').addEventListener('click', async () => {
+
+    const response = await fetch("{{ route('telegram.send-code') }}", {
+
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "X-CSRF-TOKEN": csrf
+        },
+
+        body: JSON.stringify({
+            phone: document.getElementById('phone').value
+        })
+
+    });
+
+    const data = await response.json();
+
+    document.getElementById('response').textContent =
+        JSON.stringify(data, null, 4);
+
+});
+
+
+document.getElementById('verify-code-btn').addEventListener('click', async () => {
+
+    const response = await fetch("{{ route('telegram.verify-code') }}", {
+
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "X-CSRF-TOKEN": csrf
+        },
+
+        body: JSON.stringify({
+            code: document.getElementById('telegram-code').value
+        })
+
+    });
+
+    const data = await response.json();
+
+    document.getElementById('response').textContent =
+        JSON.stringify(data, null, 4);
+
+});
+
+</script>
 
 {{-- Security --}}
 <div class="panel">
@@ -121,29 +185,27 @@
     <h2 style="margin-bottom:20px;">ℹ️ About</h2>
 
     <table>
-        <tbody>
 
-            <tr>
-                <td><strong>Application</strong></td>
-                <td>InfiniTG</td>
-            </tr>
+        <tr>
+            <td><strong>Application</strong></td>
+            <td>InfiniTG</td>
+        </tr>
 
-            <tr>
-                <td><strong>Version</strong></td>
-                <td>v1.0 Beta</td>
-            </tr>
+        <tr>
+            <td><strong>Version</strong></td>
+            <td>v1.0 Beta</td>
+        </tr>
 
-            <tr>
-                <td><strong>Framework</strong></td>
-                <td>Laravel {{ app()->version() }}</td>
-            </tr>
+        <tr>
+            <td><strong>Framework</strong></td>
+            <td>Laravel {{ app()->version() }}</td>
+        </tr>
 
-            <tr>
-                <td><strong>PHP Version</strong></td>
-                <td>{{ PHP_VERSION }}</td>
-            </tr>
+        <tr>
+            <td><strong>PHP Version</strong></td>
+            <td>{{ PHP_VERSION }}</td>
+        </tr>
 
-        </tbody>
     </table>
 
 </div>

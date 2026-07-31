@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Services\Storage\StorageManager;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class FileController extends Controller
 {
@@ -41,14 +42,18 @@ public function upload(Request $request)
         'file_path' => $result['file_path'],
         'telegram_file_id' => $result['telegram_file_id'],
         'telegram_message_id' => $result['telegram_message_id'],
+        'telegram_chat_id' => $result['telegram_chat_id'],
         'storage_driver' => $result['storage_driver'],
         'mime_type' => $uploadedFile->getClientMimeType(),
         'file_size' => $uploadedFile->getSize(),
         'checksum' => hash_file('sha256', $uploadedFile->getRealPath()),
+        
     ]);
 
     return redirect()->back()->with('success', 'File uploaded successfully!');
 }
+
+
 public function download($id)
 {
     $file = File::where('id', $id)
@@ -57,7 +62,41 @@ public function download($id)
 
     $storage = new StorageManager();
 
-    return $storage->driver()->download($file);
+    $tempPath = $storage->download($file);
+
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
+
+    return response()->download(
+        $tempPath,
+        $file->original_name,
+        [
+            'Content-Type' => $file->mime_type,
+        ]
+    )->deleteFileAfterSend(true);
+}
+
+public function preview($id)
+{
+    $file = File::where('id', $id)
+        ->where('user_id', Auth::id())
+        ->firstOrFail();
+
+    $storage = new StorageManager();
+
+    $tempPath = $storage->download($file);
+
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
+
+    header('Content-Type: '.$file->mime_type);
+    header('Content-Length: '.filesize($tempPath));
+
+    readfile($tempPath);
+
+    exit;
 }
 
 public function destroy($id)
@@ -100,12 +139,10 @@ public function forceDelete($id)
         ->where('user_id', Auth::id())
         ->firstOrFail();
 
-    // Delete the physical file
-    if (Storage::disk('public')->exists($file->file_path)) {
-        Storage::disk('public')->delete($file->file_path);
-    }
+    $storage = new StorageManager();
 
-    // Permanently delete the database record
+    $storage->driver()->delete($file);
+
     $file->forceDelete();
 
     return redirect()->route('trash')

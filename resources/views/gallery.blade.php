@@ -14,7 +14,7 @@
 
         <div style="
             display:grid;
-            grid-template-columns:repeat(auto-fill, minmax(220px,1fr));
+            grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
             gap:20px;
         ">
 
@@ -27,14 +27,31 @@
                     background:#fff;
                 ">
 
-                    <img
-                        src="{{ asset('storage/'.$file->file_path) }}"
-                        alt="{{ $file->original_name }}"
-                        style="
-                            width:100%;
-                            height:180px;
-                            object-fit:cover;
-                        ">
+                    @if($file->storage_driver === 'telegram')
+
+                        <img
+                            src="{{ route('preview', $file->id) }}"
+                            alt="{{ $file->original_name }}"
+                            style="
+                                width:100%;
+                                height:180px;
+                                object-fit:cover;
+                            "
+                        >
+
+                    @else
+
+                        <img
+                            src="{{ asset('storage/'.$file->file_path) }}"
+                            alt="{{ $file->original_name }}"
+                            style="
+                                width:100%;
+                                height:180px;
+                                object-fit:cover;
+                            "
+                        >
+
+                    @endif
 
                     <div style="padding:15px;">
 
@@ -47,31 +64,35 @@
                         </strong>
 
                         <small style="color:#666;">
-                            {{ number_format($file->file_size/1024,2) }} KB
+                            {{ number_format($file->file_size / 1024, 2) }} KB
                         </small>
 
                         <br><br>
 
-                        <a href="{{ route('download', $file->id) }}" class="btn">
+                        <a
+                            href="{{ route('download', $file->id) }}"
+                            class="btn"
+                        >
                             ⬇ Download
                         </a>
 
                         <form
                             action="{{ route('favorite.toggle',$file->id) }}"
                             method="POST"
-                            style="display:inline;">
-
+                            style="display:inline;"
+                        >
                             @csrf
                             @method('PUT')
 
-                            <button class="btn" type="submit">
-
+                            <button
+                                class="btn"
+                                type="submit"
+                            >
                                 @if($file->is_favorite)
                                     ⭐
                                 @else
                                     ☆
                                 @endif
-
                             </button>
 
                         </form>
@@ -79,18 +100,17 @@
                         <form
                             action="{{ route('delete',$file->id) }}"
                             method="POST"
-                            style="display:inline;">
-
+                            style="display:inline;"
+                        >
                             @csrf
                             @method('DELETE')
 
                             <button
                                 class="btn"
                                 type="submit"
-                                onclick="return confirm('Move image to Trash?')">
-
+                                onclick="return confirm('Move image to Trash?')"
+                            >
                                 🗑
-
                             </button>
 
                         </form>
