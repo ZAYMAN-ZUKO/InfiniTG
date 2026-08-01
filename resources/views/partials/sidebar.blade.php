@@ -9,8 +9,8 @@
         Dashboard
     </a>
 
-    <a class="{{ request()->routeIs('files') ? 'active' : '' }}"
-       href="{{ route('files') }}">
+    <a class="{{ request()->routeIs('files.*') ? 'active' : '' }}"
+       href="{{ route('files.index') }}">
         My Files
     </a>
 

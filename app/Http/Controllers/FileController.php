@@ -8,20 +8,30 @@ use Illuminate\Support\Facades\Auth;
 use App\Services\Storage\StorageManager;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Folder;
 
 class FileController extends Controller
 {
     /**
      * Show all files of the logged-in user.
      */
-    public function index()
-    {
-        $files = File::where('user_id', Auth::id())
-            ->latest()
-            ->get();
+public function index()
+{
+    $folders = Folder::where('user_id', Auth::id())
+        ->whereNull('parent_id')
+        ->latest()
+        ->get();
 
-        return view('files', compact('files'));
-    }
+    $files = File::where('user_id', Auth::id())
+        ->whereNull('folder_id')
+        ->latest()
+        ->get();
+
+    return view('files', compact(
+        'folders',
+        'files'
+    ));
+}
 
 public function upload(Request $request)
 {
@@ -212,14 +222,23 @@ public function recent()
 
 public function search(Request $request)
 {
-    $search = $request->search;
+    $search = trim($request->search);
+
+    $folders = Folder::where('user_id', Auth::id())
+        ->whereNull('parent_id')
+        ->latest()
+        ->get();
 
     $files = File::where('user_id', Auth::id())
         ->where('original_name', 'LIKE', "%{$search}%")
         ->latest()
         ->get();
 
-    return view('files', compact('files', 'search'));
+    return view('files', compact(
+        'folders',
+        'files',
+        'search'
+    ));
 }
 
 }

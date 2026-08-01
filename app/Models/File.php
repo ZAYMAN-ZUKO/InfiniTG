@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Folder;
 
 class File extends Model
 {
@@ -47,4 +48,12 @@ class File extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+ * Folder
+ */
+public function folder()
+{
+    return $this->belongsTo(Folder::class);
+}
 }

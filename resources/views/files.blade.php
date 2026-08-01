@@ -163,4 +163,140 @@
 
 </div>
 
+{{-- Folder Section --}}
+<div class="panel" style="margin-bottom:25px;">
+
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:20px;
+    ">
+
+        <h2>Folders</h2>
+
+        <form
+            action="{{ route('folders.store') }}"
+            method="POST"
+            style="display:flex; gap:10px;"
+        >
+            @csrf
+
+            <input
+                type="text"
+                name="name"
+                placeholder="Folder name"
+                required
+            >
+
+            <button
+                class="btn"
+                type="submit"
+            >
+                📁 New Folder
+            </button>
+
+        </form>
+
+    </div>
+
+    @if($folders->count())
+
+        <div style="
+            display:grid;
+            grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+            gap:15px;
+        ">
+
+            @foreach($folders as $folder)
+
+                <div style="
+                    border:1px solid #ddd;
+                    border-radius:10px;
+                    padding:18px;
+                    background:#fff;
+                ">
+
+                    <div style="
+                        font-size:18px;
+                        font-weight:bold;
+                    ">
+                        <a
+    href="{{ route('folders.show', $folder) }}"
+    style="
+        text-decoration:none;
+        color:inherit;
+        display:block;
+    "
+>
+    📁 {{ $folder->name }}
+</a>
+                    </div>
+<div style="margin-top:15px;">
+
+    <form
+        action="{{ route('folders.update', $folder) }}"
+        method="POST"
+        style="margin-bottom:8px;"
+    >
+        @csrf
+        @method('PUT')
+
+        <input
+            type="text"
+            name="name"
+            value="{{ $folder->name }}"
+            style="width:100%; margin-bottom:8px;"
+        >
+
+        <button
+            class="btn"
+            style="width:100%;"
+        >
+            ✏ Rename
+        </button>
+
+    </form>
+
+    <form
+        action="{{ route('folders.destroy', $folder) }}"
+        method="POST"
+    >
+        @csrf
+        @method('DELETE')
+
+        <button
+            class="btn"
+            style="width:100%; background:#dc3545;"
+            onclick="return confirm('Delete this folder?')"
+        >
+            🗑 Delete
+        </button>
+
+    </form>
+
+</div>
+                    <div style="
+                        margin-top:10px;
+                        color:#888;
+                        font-size:13px;
+                    ">
+                        Created:
+                        {{ $folder->created_at->format('d M Y') }}
+                    </div>
+
+                </div>
+
+            @endforeach
+
+        </div>
+
+    @else
+
+        <p>No folders yet.</p>
+
+    @endif
+
+</div>
+
 @endsection

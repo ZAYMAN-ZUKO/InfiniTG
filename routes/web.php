@@ -1,8 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\FileController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FileController;
+use App\Http\Controllers\FolderController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TelegramController;
 
@@ -16,11 +17,17 @@ Route::view('/', 'index')->name('home');
 
 /*
 |--------------------------------------------------------------------------
-| Dashboard
+| Authenticated Routes
 |--------------------------------------------------------------------------
 */
 
 Route::middleware('auth')->group(function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Dashboard
+    |--------------------------------------------------------------------------
+    */
 
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
@@ -32,13 +39,16 @@ Route::middleware('auth')->group(function () {
     */
 
     Route::get('/files', [FileController::class, 'index'])
-        ->name('files');
+        ->name('files.index');
 
     Route::post('/upload', [FileController::class, 'upload'])
         ->name('upload');
 
     Route::get('/download/{id}', [FileController::class, 'download'])
         ->name('download');
+
+    Route::get('/preview/{id}', [FileController::class, 'preview'])
+        ->name('preview');
 
     Route::delete('/delete/{id}', [FileController::class, 'destroy'])
         ->name('delete');
@@ -63,9 +73,6 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/gallery', [FileController::class, 'gallery'])
         ->name('gallery');
-Route::get('/preview/{id}', [FileController::class, 'preview'])
-    ->middleware('auth')
-    ->name('preview');
 
     Route::get('/favorites', [FileController::class, 'favorites'])
         ->name('favorites');
@@ -78,6 +85,24 @@ Route::get('/preview/{id}', [FileController::class, 'preview'])
 
     Route::get('/search', [FileController::class, 'search'])
         ->name('search');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Folders
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post('/folders', [FolderController::class, 'store'])
+        ->name('folders.store');
+
+    Route::get('/folders/{folder}', [FolderController::class, 'show'])
+        ->name('folders.show');
+
+    Route::put('/folders/{folder}', [FolderController::class, 'update'])
+        ->name('folders.update');
+
+    Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])
+        ->name('folders.destroy');
 
     /*
     |--------------------------------------------------------------------------
@@ -111,7 +136,7 @@ Route::get('/preview/{id}', [FileController::class, 'preview'])
 
     /*
     |--------------------------------------------------------------------------
-    | Development Routes
+    | Development
     |--------------------------------------------------------------------------
     */
 
@@ -125,4 +150,4 @@ Route::get('/preview/{id}', [FileController::class, 'preview'])
 |--------------------------------------------------------------------------
 */
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
