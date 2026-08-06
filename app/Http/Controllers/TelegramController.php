@@ -67,25 +67,4 @@ class TelegramController extends Controller
             'message' => 'Telegram account disconnected.',
         ]);
     }
-    public function uploadTest()
-{
-    $service = new TelegramFileService(
-        new \App\Services\Telegram\TelegramClient(
-            'user_' . auth()->id() . '.madeline'
-        )
-    );
-
-    $file = storage_path('app/test.jpg');
-
-    if (! file_exists($file)) {
-        return response()->json([
-            'success' => false,
-            'message' => 'storage/app/test.jpg not found.',
-        ]);
-    }
-
-   $result = $service->upload($file);
-
-dd($result);
-}
 }

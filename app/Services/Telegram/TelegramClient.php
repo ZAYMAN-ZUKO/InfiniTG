@@ -5,6 +5,7 @@ namespace App\Services\Telegram;
 use danog\MadelineProto\API;
 use danog\MadelineProto\Settings;
 use danog\MadelineProto\Settings\AppInfo;
+use danog\MadelineProto\Settings\Logger;
 
 class TelegramClient
 {
@@ -26,6 +27,12 @@ class TelegramClient
             ->setApiId((int) config('storage.telegram.api_id'))
             ->setApiHash((string) config('storage.telegram.api_hash'))
             ->setShowPrompt(false);
+
+        $logger = new Logger();
+        $logger->setType(Logger::FILE_LOGGER);
+        $logger->setExtra(storage_path('logs/madelineproto.log'));
+        $logger->setLevel(Logger::LEVEL_WARNING);
+        $settings->setLogger($logger);
 
         $this->api = new API($sessionPath, $settings);
     }

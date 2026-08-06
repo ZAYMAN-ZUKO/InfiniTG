@@ -1,47 +1,56 @@
 <x-guest-layout>
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form method="POST" action="{{ route('login') }}">
-        @csrf
+<h2>Welcome back</h2>
+<p>Log in to your InfiniTG account.</p>
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
+@if(session('status'))
+    <div class="alert alert-success">
+        <i data-lucide="check-circle" aria-hidden="true"></i>
+        <span>{{ session('status') }}</span>
+    </div>
+@endif
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
+@if($errors->any())
+    <div class="alert alert-danger">
+        <i data-lucide="alert-circle" aria-hidden="true"></i>
+        <ul>
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
 
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
+<form method="POST" action="{{ route('login') }}">
+    @csrf
 
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
+    <div class="field">
+        <label for="email">Email</label>
+        <input class="input" id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username">
+    </div>
 
-        <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-            </label>
-        </div>
+    <div class="field">
+        <label for="password">Password</label>
+        <input class="input" id="password" type="password" name="password" required autocomplete="current-password">
+    </div>
 
-        <div class="flex items-center justify-end mt-4">
-            @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
-                </a>
-            @endif
+    <div class="auth-links">
+        <label class="check">
+            <input type="checkbox" name="remember" id="remember_me">
+            Remember me
+        </label>
+        @if (Route::has('password.request'))
+            <a href="{{ route('password.request') }}">Forgot password?</a>
+        @endif
+    </div>
 
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
-        </div>
-    </form>
+    <button class="btn btn-primary btn-block" type="submit" style="margin-top:20px">
+        <i data-lucide="log-in" aria-hidden="true"></i>Log in
+    </button>
+</form>
+
+<p class="auth-alt">
+    Don't have an account? <a href="{{ route('register') }}">Create one</a>
+</p>
+
 </x-guest-layout>

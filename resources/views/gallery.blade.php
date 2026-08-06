@@ -4,139 +4,73 @@
 
 @section('content')
 
-<h1 style="margin-bottom:25px;">Gallery</h1>
+<div class="pagehead">
+    <div>
+        <h1>Gallery</h1>
+        <p>All your images in one place.</p>
+    </div>
+    <div class="actions">
+        <button class="btn btn-primary" type="button" data-open-modal="upload">
+            <i data-lucide="upload" aria-hidden="true"></i>Upload
+        </button>
+    </div>
+</div>
 
-<div class="panel">
+@if(session('success'))
+    <div class="alert alert-success" data-toast="{{ session('success') }}">
+        <i data-lucide="check-circle" aria-hidden="true"></i>
+        <span>{{ session('success') }}</span>
+    </div>
+@endif
 
-    <h2 style="margin-bottom:20px;">Image Gallery</h2>
+@if($files->count())
+    <div class="gallery">
+        @foreach($files as $file)
+            <div class="photo">
+                @if($file->storage_driver === 'telegram')
+                    <img class="photo-img" src="{{ route('preview', $file->id) }}" alt="{{ $file->original_name }}" loading="lazy">
+                @else
+                    <img class="photo-img" src="{{ asset('storage/' . $file->file_path) }}" alt="{{ $file->original_name }}" loading="lazy">
+                @endif
 
-    @if($files->count())
+                <div class="photo-body">
+                    <b>{{ $file->original_name }}</b>
+                    <span>{{ number_format($file->file_size / 1024, 1) }} KB &middot; {{ $file->created_at->format('d M Y') }}</span>
 
-        <div style="
-            display:grid;
-            grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
-            gap:20px;
-        ">
-
-            @foreach($files as $file)
-
-                <div style="
-                    border:1px solid #ddd;
-                    border-radius:10px;
-                    overflow:hidden;
-                    background:#fff;
-                ">
-
-                    @if($file->storage_driver === 'telegram')
-
-                        <img
-                            src="{{ route('preview', $file->id) }}"
-                            alt="{{ $file->original_name }}"
-                            style="
-                                width:100%;
-                                height:180px;
-                                object-fit:cover;
-                            "
-                        >
-
-                    @else
-
-                        <img
-                            src="{{ asset('storage/'.$file->file_path) }}"
-                            alt="{{ $file->original_name }}"
-                            style="
-                                width:100%;
-                                height:180px;
-                                object-fit:cover;
-                            "
-                        >
-
-                    @endif
-
-                    <div style="padding:15px;">
-
-                        <strong style="
-                            display:block;
-                            margin-bottom:8px;
-                            word-break:break-word;
-                        ">
-                            {{ $file->original_name }}
-                        </strong>
-
-                        <small style="color:#666;">
-                            {{ number_format($file->file_size / 1024, 2) }} KB
-                        </small>
-
-                        <br><br>
-
-                        <a
-                            href="{{ route('download', $file->id) }}"
-                            class="btn"
-                        >
-                            ⬇ Download
+                    <div class="photo-actions">
+                        <a class="btn btn-ghost btn-sm" href="{{ route('download', $file->id) }}">
+                            <i data-lucide="download" aria-hidden="true"></i>Download
                         </a>
-
-                        <form
-                            action="{{ route('favorite.toggle',$file->id) }}"
-                            method="POST"
-                            style="display:inline;"
-                        >
+                        <form action="{{ route('favorite.toggle', $file->id) }}" method="POST">
                             @csrf
                             @method('PUT')
-
-                            <button
-                                class="btn"
-                                type="submit"
-                            >
-                                @if($file->is_favorite)
-                                    ⭐
-                                @else
-                                    ☆
-                                @endif
+                            <button class="btn btn-ghost btn-sm btn-icon" type="submit" title="Favorite">
+                                <i data-lucide="star" aria-hidden="true" style="{{ $file->is_favorite ? 'fill:var(--warn);color:var(--warn)' : '' }}"></i>
                             </button>
-
                         </form>
-
-                        <form
-                            action="{{ route('delete',$file->id) }}"
-                            method="POST"
-                            style="display:inline;"
-                        >
+                        <form action="{{ route('delete', $file->id) }}" method="POST">
                             @csrf
                             @method('DELETE')
-
-                            <button
-                                class="btn"
-                                type="submit"
-                                onclick="return confirm('Move image to Trash?')"
-                            >
-                                🗑
+                            <button class="btn btn-danger btn-sm btn-icon" type="submit" title="Delete" onclick="return confirm('Move this image to Trash?')">
+                                <i data-lucide="trash-2" aria-hidden="true"></i>
                             </button>
-
                         </form>
-
                     </div>
-
                 </div>
-
-            @endforeach
-
+            </div>
+        @endforeach
+    </div>
+@else
+    <div class="card">
+        <div class="empty">
+            <span class="empty-icon"><i data-lucide="images" aria-hidden="true"></i></span>
+            <h3>No images found</h3>
+            <p>Upload JPG, PNG, WEBP or GIF images to see them here.</p>
+            <button class="btn btn-primary" type="button" data-open-modal="upload">
+                <i data-lucide="upload" aria-hidden="true"></i>Upload an image
+            </button>
         </div>
-
-    @else
-
-        <div style="text-align:center;padding:60px;">
-
-            <h3>No images found.</h3>
-
-            <p>
-                Upload JPG, PNG, WEBP or GIF images to see them here.
-            </p>
-
-        </div>
-
-    @endif
-
-</div>
+    </div>
+@endif
 
 @endsection

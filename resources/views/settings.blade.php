@@ -4,210 +4,269 @@
 
 @section('content')
 
-<h1 style="margin-bottom:25px;">Settings</h1>
+<div class="pagehead">
+    <div>
+        <h1>Settings</h1>
+        <p>Manage your account, storage and Telegram connection.</p>
+    </div>
+</div>
 
 @if(session('success'))
-<p style="color:green;margin-bottom:20px;">
-    {{ session('success') }}
-</p>
+    <div class="alert alert-success" data-toast="{{ session('success') }}">
+        <i data-lucide="check-circle" aria-hidden="true"></i>
+        <span>{{ session('success') }}</span>
+    </div>
 @endif
 
-{{-- Profile --}}
-<div class="panel">
+<div class="settings-grid">
 
-    <h2 style="margin-bottom:20px;">👤 Profile</h2>
+    {{-- Profile --}}
+    <div class="panel">
+        <div class="panel-head">
+            <h3><i data-lucide="user" aria-hidden="true"></i> Profile</h3>
+        </div>
+        <table class="info-table">
+            <tr>
+                <td>Name</td>
+                <td>{{ $user->name }}</td>
+            </tr>
+            <tr>
+                <td>Email</td>
+                <td>{{ $user->email }}</td>
+            </tr>
+            <tr>
+                <td>Member since</td>
+                <td>{{ $user->created_at ? $user->created_at->format('d M Y') : '—' }}</td>
+            </tr>
+        </table>
+    </div>
 
-    <table>
-        <tr>
-            <td><strong>Name</strong></td>
-            <td>{{ $user->name }}</td>
-        </tr>
+    {{-- Storage --}}
+    <div class="panel">
+        <div class="panel-head">
+            <h3><i data-lucide="hard-drive" aria-hidden="true"></i> Storage Information</h3>
+        </div>
 
-        <tr>
-            <td><strong>Email</strong></td>
-            <td>{{ $user->email }}</td>
-        </tr>
-    </table>
+        @php
+            $usedMB = $storageUsed ?? 0;
+            $maxMB = config('infinitg.max_storage_mb');
+            $percent = min(round(($usedMB / $maxMB) * 100, 2), 100);
+        @endphp
 
-</div>
+        <div class="meter">
+            <div class="meter-fill" style="width:{{ $percent }}%"></div>
+        </div>
+        <div class="meter-meta">
+            <b>{{ $usedMB }} MB used</b>
+            <span>{{ $maxMB }} MB free plan</span>
+        </div>
 
-{{-- Storage --}}
-<div class="panel">
+        <table class="info-table" style="margin-top:14px">
+            <tr>
+                <td>Total Files</td>
+                <td>{{ $totalFiles }}</td>
+            </tr>
+            <tr>
+                <td>Favorite Files</td>
+                <td>{{ $favoriteCount }}</td>
+            </tr>
+            <tr>
+                <td>Trash Files</td>
+                <td>{{ $trashCount }}</td>
+            </tr>
+        </table>
+    </div>
 
-    <h2 style="margin-bottom:20px;">💾 Storage Information</h2>
+    {{-- Telegram --}}
+    <div class="panel">
+        <div class="panel-head">
+            <h3><i data-lucide="send" aria-hidden="true"></i> Telegram Account</h3>
+            @if($telegramConnected)
+                <span class="badge badge-success"><i data-lucide="check" aria-hidden="true"></i>Connected</span>
+            @else
+                <span class="badge badge-warn"><i data-lucide="alert-circle" aria-hidden="true"></i>Not Connected</span>
+            @endif
+        </div>
 
-    <table>
-        <tr>
-            <td><strong>Total Files</strong></td>
-            <td>{{ $totalFiles }}</td>
-        </tr>
+        @if($telegramConnected)
+            {{-- Connected state --}}
+            <div class="tg-status">
+                <i data-lucide="check-circle" aria-hidden="true"></i>
+                <div>
+                    <b>Telegram Connected</b>
+                    <span>Your Telegram account is successfully connected and ready to use.</span>
+                </div>
+            </div>
 
-        <tr>
-            <td><strong>Storage Used</strong></td>
-            <td>{{ $storageUsed }} MB</td>
-        </tr>
+            <table class="info-table">
+                <tr>
+                    <td>Phone Number</td>
+                    <td>{{ $telegramPhone ?? '—' }}</td>
+                </tr>
+                <tr>
+                    <td>Connected On</td>
+                    <td>{{ $telegramConnectedAt ? $telegramConnectedAt->format('d M Y') : '—' }}</td>
+                </tr>
+                <tr>
+                    <td>Status</td>
+                    <td><span class="badge badge-success">Active</span></td>
+                </tr>
+            </table>
 
-        <tr>
-            <td><strong>Favorite Files</strong></td>
-            <td>{{ $favoriteCount }}</td>
-        </tr>
+            <div style="margin-top:16px">
+                <button class="btn btn-ghost btn-block" type="button" onclick="return confirm('Disconnect your Telegram account? You will need to reconnect to continue using Telegram storage.')">
+                    <i data-lucide="unplug" aria-hidden="true"></i>Disconnect Telegram
+                </button>
+            </div>
 
-        <tr>
-            <td><strong>Trash Files</strong></td>
-            <td>{{ $trashCount }}</td>
-        </tr>
-    </table>
+        @else
+            {{-- Not connected state --}}
+            <div class="tg-status tg-off">
+                <i data-lucide="zap" aria-hidden="true"></i>
+                <div>
+                    <b>Telegram integration ready</b>
+                    <span>Connect your Telegram account to power your cloud storage.</span>
+                </div>
+            </div>
 
-</div>
+            <div class="field">
+                <label for="phone">Phone Number</label>
+                <input class="input" type="text" id="phone" placeholder="+8801XXXXXXXXX" autocomplete="tel">
+            </div>
 
-{{-- Telegram --}}
-<div class="panel">
+            <button class="btn btn-primary btn-block" id="send-code-btn" type="button">
+                <i data-lucide="message-circle" aria-hidden="true"></i>Send Code
+            </button>
 
-    <h2 style="margin-bottom:20px;">📱 Telegram Account</h2>
+            <div class="field" style="margin-top:16px">
+                <label for="telegram-code">Verification Code</label>
+                <input class="input" type="text" id="telegram-code" placeholder="Enter Telegram OTP" autocomplete="one-time-code">
+            </div>
 
-    @csrf
+            <button class="btn btn-soft btn-block" id="verify-code-btn" type="button">
+                <i data-lucide="shield-check" aria-hidden="true"></i>Verify Code
+            </button>
 
-    <label>Phone Number</label>
+            <div id="tg-response" class="is-hidden" style="margin-top:14px"></div>
 
-    <input
-        type="text"
-        id="phone"
-        placeholder="+8801XXXXXXXXX"
-        style="width:100%;padding:10px;margin:10px 0 15px;"
-    >
+            <div class="note">
+                <i data-lucide="info" aria-hidden="true"></i>
+                <span>A one-time code will be sent to your Telegram. Two-step verification (2FA) passwords are supported during login.</span>
+            </div>
+        @endif
+    </div>
 
-    <button
-        id="send-code-btn"
-        class="btn"
-        type="button"
-    >
-        Send Code
-    </button>
+    {{-- Security --}}
+    <div class="panel">
+        <div class="panel-head">
+            <h3><i data-lucide="shield" aria-hidden="true"></i> Security</h3>
+        </div>
+        <p class="text-sm muted" style="margin-bottom:14px">
+            Your password is securely hashed and encrypted. Account security is handled by Laravel's battle-tested auth system.
+        </p>
+        <button class="btn btn-ghost" type="button" disabled>
+            <i data-lucide="lock" aria-hidden="true"></i>Change Password (Coming Soon)
+        </button>
+    </div>
 
-    <hr style="margin:25px 0;">
-
-    <label>Verification Code</label>
-
-    <input
-        type="text"
-        id="telegram-code"
-        placeholder="Enter Telegram OTP"
-        style="width:100%;padding:10px;margin:10px 0 15px;"
-    >
-
-    <button
-        id="verify-code-btn"
-        class="btn"
-        type="button"
-    >
-        Verify Code
-    </button>
-
-    <pre id="response" style="margin-top:20px;"></pre>
-
-</div>
-
-<script>
-
-const csrf = "{{ csrf_token() }}";
-
-document.getElementById('send-code-btn').addEventListener('click', async () => {
-
-    const response = await fetch("{{ route('telegram.send-code') }}", {
-
-        method: "POST",
-
-        headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "X-CSRF-TOKEN": csrf
-        },
-
-        body: JSON.stringify({
-            phone: document.getElementById('phone').value
-        })
-
-    });
-
-    const data = await response.json();
-
-    document.getElementById('response').textContent =
-        JSON.stringify(data, null, 4);
-
-});
-
-
-document.getElementById('verify-code-btn').addEventListener('click', async () => {
-
-    const response = await fetch("{{ route('telegram.verify-code') }}", {
-
-        method: "POST",
-
-        headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "X-CSRF-TOKEN": csrf
-        },
-
-        body: JSON.stringify({
-            code: document.getElementById('telegram-code').value
-        })
-
-    });
-
-    const data = await response.json();
-
-    document.getElementById('response').textContent =
-        JSON.stringify(data, null, 4);
-
-});
-
-</script>
-
-{{-- Security --}}
-<div class="panel">
-
-    <h2 style="margin-bottom:20px;">🔒 Security</h2>
-
-    <p>Password is securely encrypted.</p>
-
-    <br>
-
-    <button class="btn" disabled>
-        Change Password (Coming Soon)
-    </button>
-
-</div>
-
-{{-- About --}}
-<div class="panel">
-
-    <h2 style="margin-bottom:20px;">ℹ️ About</h2>
-
-    <table>
-
-        <tr>
-            <td><strong>Application</strong></td>
-            <td>InfiniTG</td>
-        </tr>
-
-        <tr>
-            <td><strong>Version</strong></td>
-            <td>v1.0 Beta</td>
-        </tr>
-
-        <tr>
-            <td><strong>Framework</strong></td>
-            <td>Laravel {{ app()->version() }}</td>
-        </tr>
-
-        <tr>
-            <td><strong>PHP Version</strong></td>
-            <td>{{ PHP_VERSION }}</td>
-        </tr>
-
-    </table>
+    {{-- About --}}
+    <div class="panel">
+        <div class="panel-head">
+            <h3><i data-lucide="info" aria-hidden="true"></i> About</h3>
+        </div>
+        <table class="info-table">
+            <tr>
+                <td>Application</td>
+                <td>InfiniTG</td>
+            </tr>
+            <tr>
+                <td>Version</td>
+                <td>v1.0 Beta</td>
+            </tr>
+            <tr>
+                <td>Framework</td>
+                <td>Laravel {{ app()->version() }}</td>
+            </tr>
+            <tr>
+                <td>PHP Version</td>
+                <td>{{ PHP_VERSION }}</td>
+            </tr>
+        </table>
+    </div>
 
 </div>
 
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    var csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    var responseBox = document.getElementById('tg-response');
+
+    if (!responseBox) { return; }
+
+    function setStatus(data, ok) {
+        responseBox.classList.remove('is-hidden');
+        var cls = ok ? 'alert alert-success' : 'alert alert-danger';
+        responseBox.className = cls;
+        responseBox.innerHTML = '<i data-lucide="' + (ok ? 'check-circle' : 'alert-circle') + '" aria-hidden="true"></i><span></span>';
+        responseBox.querySelector('span').textContent = data.message || 'Something went wrong.';
+        if (window.lucide) { lucide.createIcons(); }
+    }
+
+    async function post(url, payload) {
+        var res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrf
+            },
+            body: JSON.stringify(payload)
+        });
+        return res.json();
+    }
+
+    var sendBtn = document.getElementById('send-code-btn');
+    if (sendBtn) {
+        sendBtn.addEventListener('click', async function () {
+            var btn = this;
+            btn.disabled = true;
+            var phone = document.getElementById('phone').value.trim();
+            if (!phone) {
+                setStatus({ message: 'Please enter your phone number.' }, false);
+                btn.disabled = false;
+                return;
+            }
+            var data = await post('{{ route('telegram.send-code') }}', { phone: phone });
+            setStatus(data, !!data.success);
+            btn.disabled = false;
+        });
+    }
+
+    var verifyBtn = document.getElementById('verify-code-btn');
+    if (verifyBtn) {
+        verifyBtn.addEventListener('click', async function () {
+            var btn = this;
+            btn.disabled = true;
+            var code = document.getElementById('telegram-code').value.trim();
+            if (!code) {
+                setStatus({ message: 'Please enter the verification code.' }, false);
+                btn.disabled = false;
+                return;
+            }
+            var data = await post('{{ route('telegram.verify-code') }}', { code: code });
+            if (data.requires_password) {
+                var password = prompt('Two-step verification is enabled. Enter your Telegram password:');
+                if (password) {
+                    data = await post('{{ route('telegram.verify-password') }}', { password: password });
+                }
+            }
+            setStatus(data, !!data.success);
+            btn.disabled = false;
+        });
+    }
+})();
+</script>
+@endpush

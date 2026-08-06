@@ -133,15 +133,6 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/telegram/me', [TelegramController::class, 'me'])
         ->name('telegram.me');
-
-    /*
-    |--------------------------------------------------------------------------
-    | Development
-    |--------------------------------------------------------------------------
-    */
-
-    Route::get('/telegram/upload-test', [TelegramController::class, 'uploadTest'])
-        ->name('telegram.upload-test');
 });
 
 /*

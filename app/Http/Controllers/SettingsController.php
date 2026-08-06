@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Auth;
 use App\Models\File;
+use App\Models\TelegramAccount;
+use Illuminate\Support\Facades\Auth;
 
 class SettingsController extends Controller
 {
@@ -26,12 +27,23 @@ class SettingsController extends Controller
 
         $storageUsed = round($storageBytes / 1024 / 1024, 2);
 
+        $telegram = TelegramAccount::where('user_id', $user->id)
+            ->where('is_active', true)
+            ->first();
+
+        $telegramConnected = $telegram !== null;
+        $telegramPhone = $telegram?->phone_number;
+        $telegramConnectedAt = $telegram?->created_at;
+
         return view('settings', compact(
             'user',
             'totalFiles',
             'favoriteCount',
             'trashCount',
-            'storageUsed'
+            'storageUsed',
+            'telegramConnected',
+            'telegramPhone',
+            'telegramConnectedAt'
         ));
     }
 }

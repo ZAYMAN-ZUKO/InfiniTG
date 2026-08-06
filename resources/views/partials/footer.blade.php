@@ -1,15 +1,4 @@
 <footer class="footer">
-
-    <p>
-        &copy; {{ date('Y') }} InfiniTG. All Rights Reserved.
-    </p>
-
-    <p>
-        Email: nahimmasrur01@gmail.com
-    </p>
-
-    <p>
-        Phone: +880 1875668148
-    </p>
-
+    <span>&copy; {{ date('Y') }} InfiniTG &mdash; Unlimited cloud storage, powered by Telegram.</span>
+    <span>Support: <a href="mailto:nahimmasrur01@gmail.com">nahimmasrur01@gmail.com</a> &middot; +880 1875668148</span>
 </footer>

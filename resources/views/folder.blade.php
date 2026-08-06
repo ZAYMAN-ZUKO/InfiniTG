@@ -1,121 +1,112 @@
 @extends('layouts.app')
 
+@section('title', $folder->name)
+
 @section('content')
 
-<div class="max-w-7xl mx-auto px-6 py-8">
+@if(session('success'))
+    <div class="alert alert-success" data-toast="{{ session('success') }}">
+        <i data-lucide="check-circle" aria-hidden="true"></i>
+        <span>{{ session('success') }}</span>
+    </div>
+@endif
 
-    <div class="flex items-center justify-between mb-6">
+@if($errors->any())
+    <div class="alert alert-danger">
+        <i data-lucide="alert-circle" aria-hidden="true"></i>
+        <ul>
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
 
-        <div>
-            <h1 class="text-3xl font-bold">
-                📁 {{ $folder->name }}
-            </h1>
+<div class="breadcrumbs">
+    <a href="{{ route('files.index') }}">My Files</a>
+    <span class="sep">/</span>
+    <span>{{ $folder->name }}</span>
+</div>
 
-            <p class="text-gray-500">
-                Folder Contents
-            </p>
-        </div>
-
-        <a href="{{ route('files.index') }}"
-           class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">
-            ← Back
+<div class="pagehead">
+    <div>
+        <h1>{{ $folder->name }}</h1>
+        <p>Folder contents &middot; created {{ $folder->created_at->format('d M Y') }}</p>
+    </div>
+    <div class="actions">
+        <button class="btn btn-primary" type="button" data-open-modal="upload">
+            <i data-lucide="upload" aria-hidden="true"></i>Upload
+        </button>
+        <button class="btn btn-soft" type="button" data-open-modal="folder">
+            <i data-lucide="folder-plus" aria-hidden="true"></i>New Folder
+        </button>
+        <a class="btn btn-ghost" href="{{ route('files.index') }}">
+            <i data-lucide="arrow-left" aria-hidden="true"></i>Back
         </a>
+    </div>
+</div>
 
+{{-- Subfolders --}}
+@if($folders->count())
+    <h3 class="sechead">Folders</h3>
+    <div class="folder-grid">
+        @foreach($folders as $subfolder)
+            <a class="folder-card" href="{{ route('folders.show', $subfolder) }}">
+                <span class="folder-icon"><i data-lucide="folder" aria-hidden="true"></i></span>
+                <h4>{{ $subfolder->name }}</h4>
+                <p>Created {{ $subfolder->created_at->format('d M Y') }}</p>
+            </a>
+        @endforeach
+    </div>
+@endif
+
+{{-- Files --}}
+<div class="card">
+    <div class="panel-head">
+        <h3><i data-lucide="file" aria-hidden="true"></i> Files in this folder</h3>
+        <span class="badge">{{ $files->count() }} file(s)</span>
     </div>
 
-
-    {{-- Subfolders --}}
-    @if($folders->count())
-
-        <h2 class="text-xl font-semibold mb-4">
-            Folders
-        </h2>
-
-        <div class="grid grid-cols-4 gap-4 mb-8">
-
-            @foreach($folders as $subfolder)
-
-                <a href="{{ route('folders.show',$subfolder) }}"
-                   class="border rounded-xl p-5 hover:bg-gray-50">
-
-                    📁
-
-                    <div class="font-semibold mt-2">
-                        {{ $subfolder->name }}
-                    </div>
-
-                </a>
-
-            @endforeach
-
-        </div>
-
-    @endif
-
-
-    {{-- Files --}}
-    <h2 class="text-xl font-semibold mb-4">
-        Files
-    </h2>
-
     @if($files->count())
-
-        <table class="w-full">
-
-            <thead>
-
-            <tr class="border-b">
-
-                <th class="text-left py-3">Name</th>
-                <th>Size</th>
-                <th>Type</th>
-
-            </tr>
-
-            </thead>
-
-            <tbody>
-
+        <div class="file-list">
             @foreach($files as $file)
-
-                <tr class="border-b">
-
-                    <td class="py-3">
-
-                        {{ $file->original_name }}
-
-                    </td>
-
-                    <td>
-
-                        {{ number_format($file->file_size/1024,2) }} KB
-
-                    </td>
-
-                    <td>
-
-                        {{ $file->mime_type }}
-
-                    </td>
-
-                </tr>
-
+                <div class="file-row">
+                    @include('partials.file-icon', ['file' => $file])
+                    <div class="file-info">
+                        <b>{{ $file->original_name }}</b>
+                        <span>{{ $file->mime_type ?? 'Unknown type' }}</span>
+                    </div>
+                    <span class="file-cell file-size">{{ number_format($file->file_size / 1024, 1) }} KB</span>
+                    <span class="file-cell file-type">{{ $file->created_at->format('d M Y') }}</span>
+                    <div class="file-actions">
+                        <a class="btn btn-ghost btn-sm btn-icon" href="{{ route('download', $file->id) }}" title="Download">
+                            <i data-lucide="download" aria-hidden="true"></i>
+                        </a>
+                        <form action="{{ route('favorite.toggle', $file->id) }}" method="POST">
+                            @csrf
+                            @method('PUT')
+                            <button class="btn btn-ghost btn-sm btn-icon" type="submit" title="Favorite">
+                                <i data-lucide="star" aria-hidden="true" style="{{ $file->is_favorite ? 'fill:var(--warn);color:var(--warn)' : '' }}"></i>
+                            </button>
+                        </form>
+                        <form action="{{ route('delete', $file->id) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <button class="btn btn-danger btn-sm btn-icon" type="submit" title="Delete" onclick="return confirm('Move this file to Trash?')">
+                                <i data-lucide="trash-2" aria-hidden="true"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
             @endforeach
-
-            </tbody>
-
-        </table>
-
-    @else
-
-        <div class="bg-white rounded-xl p-10 text-center text-gray-500">
-
-            This folder is empty.
-
         </div>
-
+    @else
+        <div class="empty">
+            <span class="empty-icon"><i data-lucide="folder-open" aria-hidden="true"></i></span>
+            <h3>This folder is empty</h3>
+            <p>Upload files here to organize them in this folder.</p>
+        </div>
     @endif
-
 </div>
 
 @endsection

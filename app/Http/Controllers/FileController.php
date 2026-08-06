@@ -2,243 +2,228 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UploadFileRequest;
 use App\Models\File;
+use App\Models\Folder;
+use App\Services\Storage\StorageManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Services\Storage\StorageManager;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
-use App\Models\Folder;
 
 class FileController extends Controller
 {
-    /**
-     * Show all files of the logged-in user.
-     */
-public function index()
-{
-    $folders = Folder::where('user_id', Auth::id())
-        ->whereNull('parent_id')
-        ->latest()
-        ->get();
+    public function index()
+    {
+        $folders = Folder::where('user_id', Auth::id())
+            ->whereNull('parent_id')
+            ->latest()
+            ->get();
 
-    $files = File::where('user_id', Auth::id())
-        ->whereNull('folder_id')
-        ->latest()
-        ->get();
+        $files = File::where('user_id', Auth::id())
+            ->whereNull('folder_id')
+            ->latest()
+            ->paginate(config('infinitg.pagination'));
 
-    return view('files', compact(
-        'folders',
-        'files'
-    ));
-}
-
-public function upload(Request $request)
-{
-    $request->validate([
-        'file' => 'required|max:51200',
-    ]);
-
-    $uploadedFile = $request->file('file');
-
-    $storage = new StorageManager();
-
-    $result = $storage->driver()->upload($uploadedFile);
-
-    File::create([
-        'user_id' => Auth::id(),
-        'original_name' => $uploadedFile->getClientOriginalName(),
-        'stored_name' => $result['stored_name'],
-        'file_path' => $result['file_path'],
-        'telegram_file_id' => $result['telegram_file_id'],
-        'telegram_message_id' => $result['telegram_message_id'],
-        'telegram_chat_id' => $result['telegram_chat_id'],
-        'storage_driver' => $result['storage_driver'],
-        'mime_type' => $uploadedFile->getClientMimeType(),
-        'file_size' => $uploadedFile->getSize(),
-        'checksum' => hash_file('sha256', $uploadedFile->getRealPath()),
-        
-    ]);
-
-    return redirect()->back()->with('success', 'File uploaded successfully!');
-}
-
-
-public function download($id)
-{
-    $file = File::where('id', $id)
-        ->where('user_id', Auth::id())
-        ->firstOrFail();
-
-    $storage = new StorageManager();
-
-    $tempPath = $storage->download($file);
-
-    while (ob_get_level()) {
-        ob_end_clean();
+        return view('files', compact('folders', 'files'));
     }
 
-    return response()->download(
-        $tempPath,
-        $file->original_name,
-        [
-            'Content-Type' => $file->mime_type,
-        ]
-    )->deleteFileAfterSend(true);
-}
+    public function upload(UploadFileRequest $request)
+    {
+        $uploadedFile = $request->file('file');
 
-public function preview($id)
-{
-    $file = File::where('id', $id)
-        ->where('user_id', Auth::id())
-        ->firstOrFail();
+        $storage = new StorageManager();
 
-    $storage = new StorageManager();
+        $result = $storage->driver()->upload($uploadedFile);
 
-    $tempPath = $storage->download($file);
+        File::create([
+            'user_id' => Auth::id(),
+            'folder_id' => $request->validated('folder_id'),
+            'original_name' => $uploadedFile->getClientOriginalName(),
+            'stored_name' => $result['stored_name'],
+            'file_path' => $result['file_path'],
+            'telegram_file_id' => $result['telegram_file_id'] ?? null,
+            'telegram_message_id' => $result['telegram_message_id'] ?? null,
+            'telegram_chat_id' => $result['telegram_chat_id'] ?? null,
+            'storage_driver' => $result['storage_driver'],
+            'mime_type' => $uploadedFile->getClientMimeType(),
+            'file_size' => $uploadedFile->getSize(),
+            'checksum' => hash_file('sha256', $uploadedFile->getRealPath()),
+        ]);
 
-    while (ob_get_level()) {
-        ob_end_clean();
+        return redirect()->back()->with('success', 'File uploaded successfully!');
     }
 
-    header('Content-Type: '.$file->mime_type);
-    header('Content-Length: '.filesize($tempPath));
+    public function download($id)
+    {
+        $file = File::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
 
-    readfile($tempPath);
+        $storage = new StorageManager();
 
-    exit;
-}
+        $tempPath = $storage->download($file);
 
-public function destroy($id)
-{
-    $file = File::where('id', $id)
-        ->where('user_id', Auth::id())
-        ->firstOrFail();
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
 
-    $file->delete();
+        return response()->download(
+            $tempPath,
+            $file->original_name,
+            [
+                'Content-Type' => $file->mime_type,
+            ]
+        )->deleteFileAfterSend(true);
+    }
 
-    return redirect()->back()->with('success', 'File moved to Trash successfully!');
-}
+    public function preview($id)
+    {
+        $file = File::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
 
-public function trash()
-{
-    $files = File::onlyTrashed()
-        ->where('user_id', Auth::id())
-        ->latest()
-        ->get();
+        $storage = new StorageManager();
 
-    return view('trash', compact('files'));
-}
+        $tempPath = $storage->download($file);
 
-public function restore($id)
-{
-    $file = File::onlyTrashed()
-        ->where('id', $id)
-        ->where('user_id', Auth::id())
-        ->firstOrFail();
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
 
-    $file->restore();
+        header('Content-Type: ' . $file->mime_type);
+        header('Content-Length: ' . filesize($tempPath));
 
-    return redirect()->route('trash')
-        ->with('success', 'File restored successfully!');
-}
-public function forceDelete($id)
-{
-    $file = File::onlyTrashed()
-        ->where('id', $id)
-        ->where('user_id', Auth::id())
-        ->firstOrFail();
+        readfile($tempPath);
 
-    $storage = new StorageManager();
+        exit;
+    }
 
-    $storage->driver()->delete($file);
+    public function destroy($id)
+    {
+        $file = File::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
 
-    $file->forceDelete();
+        $file->delete();
 
-    return redirect()->route('trash')
-        ->with('success', 'File deleted permanently!');
-}
+        return redirect()->back()->with('success', 'File moved to Trash successfully!');
+    }
 
-public function gallery()
-{
-    $files = File::where('user_id', Auth::id())
-        ->where(function ($query) {
-            $query->where('mime_type', 'like', 'image/%');
-        })
-        ->latest()
-        ->get();
+    public function trash()
+    {
+        $files = File::onlyTrashed()
+            ->where('user_id', Auth::id())
+            ->latest()
+            ->paginate(config('infinitg.pagination'));
 
-    return view('gallery', compact('files'));
-}
+        return view('trash', compact('files'));
+    }
 
+    public function restore($id)
+    {
+        $file = File::onlyTrashed()
+            ->where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
 
-public function toggleFavorite($id)
-{
-    $file = File::where('id', $id)
-        ->where('user_id', Auth::id())
-        ->firstOrFail();
+        $file->restore();
 
-    $file->is_favorite = !$file->is_favorite;
-    $file->save();
+        return redirect()->route('trash')
+            ->with('success', 'File restored successfully!');
+    }
 
-    return redirect()->back()->with('success', 'Favorite updated successfully!');
-}
+    public function forceDelete($id)
+    {
+        $file = File::onlyTrashed()
+            ->where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
 
-public function rename(Request $request, $id)
-{
-    $request->validate([
-        'original_name' => 'required|string|max:255',
-    ]);
+        $storage = new StorageManager();
 
-    $file = File::where('id', $id)
-        ->where('user_id', Auth::id())
-        ->firstOrFail();
+        $storage->driver()->delete($file);
 
-    $file->original_name = $request->original_name;
-    $file->save();
+        $file->forceDelete();
 
-    return redirect()->back()->with('success', 'File renamed successfully!');
-}
+        return redirect()->route('trash')
+            ->with('success', 'File deleted permanently!');
+    }
 
-public function favorites()
-{
-    $files = File::where('user_id', Auth::id())
-        ->where('is_favorite', true)
-        ->latest()
-        ->get();
+    public function gallery()
+    {
+        $files = File::where('user_id', Auth::id())
+            ->where('mime_type', 'like', 'image/%')
+            ->latest()
+            ->paginate(config('infinitg.pagination'));
 
-    return view('favorites', compact('files'));
-}
+        return view('gallery', compact('files'));
+    }
 
-public function recent()
-{
-    $files = File::where('user_id', Auth::id())
-        ->latest()
-        ->take(10)
-        ->get();
+    public function toggleFavorite($id)
+    {
+        $file = File::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
 
-    return view('recent', compact('files'));
-}
+        $file->is_favorite = !$file->is_favorite;
+        $file->save();
 
-public function search(Request $request)
-{
-    $search = trim($request->search);
+        return redirect()->back()->with('success', 'Favorite updated successfully!');
+    }
 
-    $folders = Folder::where('user_id', Auth::id())
-        ->whereNull('parent_id')
-        ->latest()
-        ->get();
+    public function rename(Request $request, $id)
+    {
+        $request->validate([
+            'original_name' => 'required|string|max:255',
+        ]);
 
-    $files = File::where('user_id', Auth::id())
-        ->where('original_name', 'LIKE', "%{$search}%")
-        ->latest()
-        ->get();
+        $file = File::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
 
-    return view('files', compact(
-        'folders',
-        'files',
-        'search'
-    ));
-}
+        $file->original_name = $request->original_name;
+        $file->save();
 
+        return redirect()->back()->with('success', 'File renamed successfully!');
+    }
+
+    public function favorites()
+    {
+        $files = File::where('user_id', Auth::id())
+            ->where('is_favorite', true)
+            ->latest()
+            ->paginate(config('infinitg.pagination'));
+
+        return view('favorites', compact('files'));
+    }
+
+    public function recent()
+    {
+        $files = File::where('user_id', Auth::id())
+            ->latest()
+            ->paginate(config('infinitg.pagination'));
+
+        return view('recent', compact('files'));
+    }
+
+    public function search(Request $request)
+    {
+        $search = trim($request->search);
+
+        if ($search === '') {
+            return redirect()->route('files.index');
+        }
+
+        $folders = Folder::where('user_id', Auth::id())
+            ->whereNull('parent_id')
+            ->latest()
+            ->get();
+
+        $files = File::where('user_id', Auth::id())
+            ->where('original_name', 'LIKE', "%{$search}%")
+            ->latest()
+            ->paginate(config('infinitg.pagination'))
+            ->withQueryString();
+
+        return view('files', compact('folders', 'files', 'search'));
+    }
 }
