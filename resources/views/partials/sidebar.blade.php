@@ -45,27 +45,22 @@
 
     <div class="sidebar-spacer"></div>
 
-    <div class="storage-meter">
+    <div class="storage-meter unlimited-storage-card">
         <div class="storage-meter-head">
-            <i data-lucide="hard-drive" aria-hidden="true"></i>Storage
+            <i data-lucide="cloud" aria-hidden="true"></i><span>Cloud Storage</span>
         </div>
-        @if(isset($storageUsed) && isset($storageMax))
-            <div class="storage-meter-bar">
-                <div class="storage-meter-fill" style="width:{{ $storagePercent ?? 0 }}%"></div>
+        <div class="unlimited-storage-highlight">
+            <i data-lucide="infinity" aria-hidden="true"></i>
+            <div>
+                <strong>Unlimited</strong>
+                <span>Storage</span>
             </div>
-            <div class="storage-meter-meta">
-                <b>{{ $storageUsed }} MB</b>
-                <span>of {{ $storageMax }} MB</span>
-            </div>
-        @else
-            <div class="storage-meter-bar">
-                <div class="storage-meter-fill" style="width:0%"></div>
-            </div>
-            <div class="storage-meter-meta">
-                <b>0 MB</b>
-                <span>of 2048 MB</span>
-            </div>
-        @endif
+        </div>
+        <p class="unlimited-storage-used">{{ $storageUsed ?? 0 }} MB currently used</p>
+        <div class="unlimited-storage-powered">
+            <i data-lucide="send" aria-hidden="true"></i>
+            <span>Powered by Telegram</span>
+        </div>
     </div>
 
 </aside>

@@ -99,13 +99,22 @@
 <div class="card">
     <div class="panel-head">
         <h3><i data-lucide="file" aria-hidden="true"></i> Uploaded Files</h3>
-        <span class="badge">{{ $files->count() }} file(s)</span>
+        <div class="file-head-actions">
+            <label class="check check-sm" title="Select all on this page">
+                <input type="checkbox" id="select-all" aria-label="Select all files">
+                <span>Select all</span>
+            </label>
+            <span class="badge">{{ $files->count() }} file(s)</span>
+        </div>
     </div>
 
     @if($files->count())
         <div class="file-list">
             @foreach($files as $file)
                 <div class="file-row">
+                    <label class="file-check-wrap" title="Select file">
+                        <input type="checkbox" class="file-check" value="{{ $file->id }}" aria-label="Select {{ $file->original_name }}">
+                    </label>
                     @include('partials.file-icon', ['file' => $file])
                     <div class="file-info">
                         <b>{{ $file->original_name }}</b>
@@ -158,4 +167,24 @@
     @endif
 </div>
 
+
+
+{{-- Bulk actions bar --}}
+<div class="bulk-bar" id="bulk-bar" aria-hidden="true">
+    <span class="bulk-count" id="bulk-count">0 selected</span>
+    <div class="bulk-actions">
+        <button class="btn btn-ghost btn-sm" type="button" data-bulk="download" data-url="{{ route('download', '__ID__') }}">
+            <i data-lucide="download" aria-hidden="true"></i>Download
+        </button>
+        <button class="btn btn-soft btn-sm" type="button" data-bulk="favorite" data-url="{{ route('favorite.toggle', '__ID__') }}" data-method="PUT">
+            <i data-lucide="star" aria-hidden="true"></i>Favorite
+        </button>
+        <button class="btn btn-danger btn-sm" type="button" data-bulk="trash" data-url="{{ route('delete', '__ID__') }}" data-method="DELETE" data-confirm="Move the selected files to Trash?">
+            <i data-lucide="trash-2" aria-hidden="true"></i>Trash
+        </button>
+    </div>
+</div>
+
 @endsection
+
+

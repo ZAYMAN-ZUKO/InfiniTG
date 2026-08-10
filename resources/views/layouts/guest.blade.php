@@ -7,7 +7,7 @@
 
     <title>{{ config('app.name', 'InfiniTG') }}</title>
 
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://unpkg.com/lucide-static@latest/font/lucide.css">
 </head>
 <body>

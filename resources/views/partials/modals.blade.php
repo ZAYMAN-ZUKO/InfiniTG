@@ -9,14 +9,22 @@
             </button>
         </div>
 
-        <form action="{{ route('upload') }}" method="POST" enctype="multipart/form-data" id="upload-form">
-            @csrf
+        <div class="upload-panel">
             <label class="dropzone" for="upload-file" data-drop-target="upload-file">
                 <i data-lucide="upload-cloud" aria-hidden="true"></i>
                 <b>Drop files here or click to browse</b>
-                <span>Up to 50 MB per file &middot; JPG, PNG, PDF, ZIP, DOC and more</span>
+                <span>Up to {{ ceil(config('infinitg.max_upload_kb') / 1024) }} MB per file &middot; JPG, PNG, PDF, ZIP, DOC and more</span>
             </label>
-            <input id="upload-file" type="file" name="file" class="is-hidden" onchange="this.form.submit()">
+            <input id="upload-file" type="file" name="file" class="is-hidden" multiple>
+
+            <div class="upload-queue is-hidden" id="upload-queue"></div>
+
+            <div class="upload-progress is-hidden" id="upload-progress">
+                <div class="upload-progress-track">
+                    <span class="upload-progress-fill" id="upload-progress-fill"></span>
+                </div>
+                <span class="upload-progress-text" id="upload-progress-text"></span>
+            </div>
 
             <div class="note">
                 <i data-lucide="info" aria-hidden="true"></i>
@@ -24,12 +32,12 @@
             </div>
 
             <div class="modal-foot">
-                <button class="btn btn-ghost" type="button" data-close-modal>Cancel</button>
-                <button class="btn btn-primary" type="submit">
-                    <i data-lucide="upload" aria-hidden="true"></i>Upload
+                <button class="btn btn-ghost" type="button" data-close-modal id="upload-cancel">Cancel</button>
+                <button class="btn btn-primary" type="button" id="upload-start" data-url="{{ route('upload') }}" disabled>
+                    <i data-lucide="upload" aria-hidden="true"></i>Upload Files
                 </button>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 
@@ -60,3 +68,4 @@
         </form>
     </div>
 </div>
+

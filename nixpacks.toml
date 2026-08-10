@@ -1,9 +1,0 @@
-# nixpacks.toml
-[phases.setup]
-nixPkgs = ["php83", "php83Extensions.mbstring", "php83Extensions.xml", "php83Extensions.curl", "php83Extensions.sqlite3", "php83Extensions.gd", "php83Extensions.zip", "php83Extensions.bcmath"]
-
-[phases.build]
-cmds = ["composer install --no-dev --no-interaction --optimize-autoloader", "php artisan config:cache", "php artisan route:cache", "php artisan view:cache"]
-
-[phases.run]
-start = "php artisan serve --host=0.0.0.0 --port=$PORT"

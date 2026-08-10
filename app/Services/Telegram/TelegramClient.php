@@ -5,6 +5,7 @@ namespace App\Services\Telegram;
 use danog\MadelineProto\API;
 use danog\MadelineProto\Settings;
 use danog\MadelineProto\Settings\Logger;
+use danog\MadelineProto\Logger as MadelineProtoLogger;
 
 class TelegramClient
 {
@@ -47,14 +48,14 @@ class TelegramClient
 
         $logger = new Logger();
 
-        $logger->setType(Logger::FILE_LOGGER);
+        $logger->setType(MadelineProtoLogger::FILE_LOGGER);
 
         $logger->setExtra(
             storage_path('logs/madelineproto.log')
         );
 
         $logger->setLevel(
-            Logger::LEVEL_WARNING
+            MadelineProtoLogger::LEVEL_WARNING
         );
 
         $settings->setLogger($logger);
@@ -108,3 +109,4 @@ class TelegramClient
             !== API::NOT_LOGGED_IN;
     }
 }
+

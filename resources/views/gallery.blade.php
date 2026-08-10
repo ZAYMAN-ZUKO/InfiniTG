@@ -27,11 +27,18 @@
     <div class="gallery">
         @foreach($files as $file)
             <div class="photo">
-                @if($file->storage_driver === 'telegram')
-                    <img class="photo-img" src="{{ route('preview', $file->id) }}" alt="{{ $file->original_name }}" loading="lazy">
-                @else
-                    <img class="photo-img" src="{{ asset('storage/' . $file->file_path) }}" alt="{{ $file->original_name }}" loading="lazy">
-                @endif
+                @php
+                    $previewSrc = $file->storage_driver === 'telegram'
+                        ? route('preview', $file->id)
+                        : asset('storage/' . $file->file_path);
+                @endphp
+                <img class="photo-img skeleton" src="{{ $previewSrc }}" alt="{{ $file->original_name }}" loading="lazy"
+                     data-lightbox
+                     data-full="{{ $previewSrc }}"
+                     data-download="{{ route('download', $file->id) }}"
+                     data-fav-url="{{ route('favorite.toggle', $file->id) }}"
+                     data-fav="{{ $file->is_favorite ? '1' : '0' }}"
+                     data-meta="{{ number_format($file->file_size / 1024, 1) }} KB &middot; {{ $file->created_at->format('d M Y') }}">
 
                 <div class="photo-body">
                     <b>{{ $file->original_name }}</b>
@@ -73,4 +80,7 @@
     </div>
 @endif
 
+@include('partials.lightbox')
+
 @endsection
+

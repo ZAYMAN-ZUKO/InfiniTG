@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InfiniTG | Unlimited Cloud Storage</title>
 
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://unpkg.com/lucide-static@latest/font/lucide.css">
 </head>
 <body>

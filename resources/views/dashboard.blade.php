@@ -19,7 +19,7 @@
     </div>
     <div class="hello-meta">
         <span class="chip"><i data-lucide="zap" aria-hidden="true"></i>Telegram powered</span>
-        <span class="chip"><i data-lucide="shield-check" aria-hidden="true"></i>2 GB free plan</span>
+        <span class="chip"><i data-lucide="infinity" aria-hidden="true"></i>Unlimited storage</span>
     </div>
 </div>
 
@@ -96,40 +96,27 @@
     </div>
 
     <div class="card">
-        <div class="storage-detail">
+        <div class="storage-detail unlimited-storage-overview">
             <h3>Storage Overview</h3>
-            <p>{{ $storageUsed }} MB used of {{ $maxStorage }} MB</p>
 
-            <div class="ring">
-                <svg viewBox="0 0 120 120" aria-hidden="true">
-                    <circle class="ring-bg" cx="60" cy="60" r="50"></circle>
-                    <circle class="ring-fg" cx="60" cy="60" r="50" stroke-dashoffset="{{ 314.16 - (314.16 * $storagePercentage / 100) }}"></circle>
-                </svg>
-                <div class="ring-center">
-                    <b>{{ round($storagePercentage) }}%</b>
-                    <span>Used</span>
-                </div>
+            <div class="unlimited-storage-overview-icon">
+                <i data-lucide="infinity" aria-hidden="true"></i>
             </div>
 
-            <div class="breakdown">
-                <div class="break-row">
-                    <span class="break-dot" style="background:var(--brand)"></span>
-                    Storage used
-                    <b>{{ $storageUsed }} MB</b>
-                </div>
-                <div class="break-row">
-                    <span class="break-dot" style="background:var(--surface-3)"></span>
-                    Free space
-                    <b>{{ max($maxStorage - $storageUsed, 0) }} MB</b>
-                </div>
-            </div>
+            <strong class="unlimited-storage-overview-title">Unlimited Storage</strong>
 
-            <a class="btn btn-primary btn-block" href="{{ route('settings') }}">
-                <i data-lucide="rocket" aria-hidden="true"></i>Upgrade Storage
-            </a>
+            <div class="unlimited-storage-overview-used">{{ $storageUsed }} MB</div>
+
+            <span class="unlimited-storage-overview-caption">Currently Used</span>
+
+            <div class="unlimited-storage-powered">
+                <i data-lucide="send" aria-hidden="true"></i>
+                <span>Powered by Telegram</span>
+            </div>
         </div>
     </div>
 
 </div>
 
 @endsection
+

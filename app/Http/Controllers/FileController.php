@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\UploadFileRequest;
 use App\Models\File;
 use App\Models\Folder;
+use App\Http\Requests\UploadFileRequest;
 use App\Services\Storage\StorageManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -28,28 +28,54 @@ class FileController extends Controller
 
     public function upload(UploadFileRequest $request)
     {
+        $isAjax = $request->ajax() || $request->header('Accept') === 'application/json';
+
         $uploadedFile = $request->file('file');
 
-        $storage = new StorageManager();
+        try {
+            $storage = new StorageManager();
+            $result = $storage->driver()->upload($uploadedFile);
 
-        $result = $storage->driver()->upload($uploadedFile);
+            File::create([
+                'user_id' => Auth::id(),
+                'folder_id' => $request->validated('folder_id'),
+                'original_name' => $uploadedFile->getClientOriginalName(),
+                'stored_name' => $result['stored_name'],
+                'file_path' => $result['file_path'],
+                'telegram_file_id' => $result['telegram_file_id'] ?? null,
+                'telegram_message_id' => $result['telegram_message_id'] ?? null,
+                'telegram_chat_id' => $result['telegram_chat_id'] ?? null,
+                'storage_driver' => $result['storage_driver'],
+                'mime_type' => $uploadedFile->getClientMimeType(),
+                'file_size' => $uploadedFile->getSize(),
+                'checksum' => hash_file('sha256', $uploadedFile->getRealPath()),
+            ]);
 
-        File::create([
-            'user_id' => Auth::id(),
-            'folder_id' => $request->validated('folder_id'),
-            'original_name' => $uploadedFile->getClientOriginalName(),
-            'stored_name' => $result['stored_name'],
-            'file_path' => $result['file_path'],
-            'telegram_file_id' => $result['telegram_file_id'] ?? null,
-            'telegram_message_id' => $result['telegram_message_id'] ?? null,
-            'telegram_chat_id' => $result['telegram_chat_id'] ?? null,
-            'storage_driver' => $result['storage_driver'],
-            'mime_type' => $uploadedFile->getClientMimeType(),
-            'file_size' => $uploadedFile->getSize(),
-            'checksum' => hash_file('sha256', $uploadedFile->getRealPath()),
-        ]);
+            if ($isAjax) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'File uploaded successfully!',
+                ]);
+            }
 
-        return redirect()->back()->with('success', 'File uploaded successfully!');
+            return redirect()->back()->with('success', 'File uploaded successfully!');
+
+        } catch (\Throwable $e) {
+            logger()->error('Upload failed', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            if ($isAjax) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Upload failed: ' . $e->getMessage(),
+                ], 500);
+            }
+
+            return redirect()->back()->withErrors(['file' => 'Upload failed. ' . $e->getMessage()]);
+        }
     }
 
     public function download($id)
@@ -226,4 +252,5 @@ class FileController extends Controller
 
         return view('files', compact('folders', 'files', 'search'));
     }
+
 }

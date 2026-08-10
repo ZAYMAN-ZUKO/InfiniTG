@@ -36,7 +36,7 @@
             </tr>
             <tr>
                 <td>Member since</td>
-                <td>{{ $user->created_at ? $user->created_at->format('d M Y') : '—' }}</td>
+                <td>{{ $user->created_at ? $user->created_at->format('d M Y') : 'â€”' }}</td>
             </tr>
         </table>
     </div>
@@ -47,18 +47,19 @@
             <h3><i data-lucide="hard-drive" aria-hidden="true"></i> Storage Information</h3>
         </div>
 
-        @php
-            $usedMB = $storageUsed ?? 0;
-            $maxMB = config('infinitg.max_storage_mb');
-            $percent = min(round(($usedMB / $maxMB) * 100, 2), 100);
-        @endphp
-
-        <div class="meter">
-            <div class="meter-fill" style="width:{{ $percent }}%"></div>
-        </div>
-        <div class="meter-meta">
-            <b>{{ $usedMB }} MB used</b>
-            <span>{{ $maxMB }} MB free plan</span>
+        <div class="unlimited-storage-panel">
+            <div class="unlimited-storage-highlight">
+                <i data-lucide="infinity" aria-hidden="true"></i>
+                <div>
+                    <strong>Unlimited</strong>
+                    <span>Storage</span>
+                </div>
+            </div>
+            <p class="unlimited-storage-used">{{ $storageUsed ?? 0 }} MB currently used</p>
+            <div class="unlimited-storage-powered">
+                <i data-lucide="send" aria-hidden="true"></i>
+                <span>Powered by Telegram</span>
+            </div>
         </div>
 
         <table class="info-table" style="margin-top:14px">
@@ -101,11 +102,11 @@
             <table class="info-table">
                 <tr>
                     <td>Phone Number</td>
-                    <td>{{ $telegramPhone ?? '—' }}</td>
+                    <td>{{ $telegramPhone ?? 'â€”' }}</td>
                 </tr>
                 <tr>
                     <td>Connected On</td>
-                    <td>{{ $telegramConnectedAt ? $telegramConnectedAt->format('d M Y') : '—' }}</td>
+                    <td>{{ $telegramConnectedAt ? $telegramConnectedAt->format('d M Y') : 'â€”' }}</td>
                 </tr>
                 <tr>
                     <td>Status</td>

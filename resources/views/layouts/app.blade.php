@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'InfiniTG') | InfiniTG</title>
 
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://unpkg.com/lucide-static@latest/font/lucide.css">
 </head>
 <body>
@@ -42,9 +42,10 @@
 
 @include('partials.modals')
 
-<div class="toast" id="toast" role="status"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="/js/app.js"></script>
 <script>
 (function () {
     if (window.lucide) { lucide.createIcons(); }
@@ -98,33 +99,8 @@
         });
     });
 
-    document.querySelectorAll('.dropzone').forEach(function (zone) {
-        var input = document.getElementById(zone.dataset.dropTarget);
-        zone.addEventListener('click', function () { if (input) { input.click(); } });
-        zone.addEventListener('dragover', function (e) {
-            e.preventDefault();
-            zone.classList.add('drag');
-        });
-        zone.addEventListener('dragleave', function () {
-            zone.classList.remove('drag');
-        });
-        zone.addEventListener('drop', function (e) {
-            e.preventDefault();
-            zone.classList.remove('drag');
-            if (input && e.dataTransfer.files.length) {
-                input.files = e.dataTransfer.files;
-                input.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        });
-    });
 
-    var flash = document.querySelector('[data-toast]');
-    if (flash) {
-        var toast = document.getElementById('toast');
-        toast.textContent = flash.dataset.toast;
-        toast.classList.add('show');
-        setTimeout(function () { toast.classList.remove('show'); }, 3200);
-    }
+
 })();
 </script>
 
@@ -132,3 +108,5 @@
 
 </body>
 </html>
+
+
