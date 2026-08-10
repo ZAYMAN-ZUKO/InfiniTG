@@ -4,61 +4,107 @@ namespace App\Services\Telegram;
 
 use danog\MadelineProto\API;
 use danog\MadelineProto\Settings;
-use danog\MadelineProto\Settings\AppInfo;
 use danog\MadelineProto\Settings\Logger;
 
 class TelegramClient
 {
-    protected API $api;
+    protected ?API $api = null;
+
+    protected string $sessionPath;
 
     public function __construct(string $sessionFile)
     {
-        $sessionPath = config('storage.telegram.session_path')
+        $this->sessionPath = config('storage.telegram.session_path')
             . DIRECTORY_SEPARATOR
             . $sessionFile;
 
-        if (! is_dir(dirname($sessionPath))) {
-            mkdir(dirname($sessionPath), 0755, true);
+        $directory = dirname($this->sessionPath);
+
+        if (! is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+    }
+
+    /**
+     * Lazily create and return the MadelineProto API instance.
+     */
+    protected function initialize(): API
+    {
+        if ($this->api instanceof API) {
+            return $this->api;
         }
 
         $settings = new Settings();
 
         $settings->getAppInfo()
-            ->setApiId((int) config('storage.telegram.api_id'))
-            ->setApiHash((string) config('storage.telegram.api_hash'))
+            ->setApiId(
+                (int) config('storage.telegram.api_id')
+            )
+            ->setApiHash(
+                (string) config('storage.telegram.api_hash')
+            )
             ->setShowPrompt(false);
 
         $logger = new Logger();
+
         $logger->setType(Logger::FILE_LOGGER);
-        $logger->setExtra(storage_path('logs/madelineproto.log'));
-        $logger->setLevel(Logger::LEVEL_WARNING);
+
+        $logger->setExtra(
+            storage_path('logs/madelineproto.log')
+        );
+
+        $logger->setLevel(
+            Logger::LEVEL_WARNING
+        );
+
         $settings->setLogger($logger);
 
-        $this->api = new API($sessionPath, $settings);
-    }
+        $this->api = new API(
+            $this->sessionPath,
+            $settings
+        );
 
-    public function getApi(): API
-    {
         return $this->api;
     }
 
+    /**
+     * Get the MadelineProto API instance.
+     */
+    public function getApi(): API
+    {
+        return $this->initialize();
+    }
+
+    /**
+     * Start MadelineProto.
+     */
     public function start(): void
     {
-        $this->api->start();
+        $this->initialize()->start();
     }
 
+    /**
+     * Serialize the session.
+     */
     public function serialize(): void
     {
-        $this->api->serialize();
+        $this->initialize()->serialize();
     }
 
+    /**
+     * Logout from Telegram.
+     */
     public function logout(): void
     {
-        $this->api->logout();
+        $this->initialize()->logout();
     }
 
+    /**
+     * Check Telegram authorization status.
+     */
     public function isAuthorized(): bool
     {
-        return $this->api->getAuthorization() !== API::NOT_LOGGED_IN;
+        return $this->initialize()->getAuthorization()
+            !== API::NOT_LOGGED_IN;
     }
 }

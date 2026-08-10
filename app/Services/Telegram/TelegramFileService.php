@@ -7,12 +7,21 @@ use Illuminate\Http\UploadedFile;
 
 class TelegramFileService
 {
-    protected API $api;
+    protected ?API $api = null;
 
     public function __construct(
         protected TelegramClient $client
     ) {
-        $this->api = $client->getApi();
+        // Do NOT initialize MadelineProto here.
+        // It will be initialized only when api() is actually called.
+    }
+
+    /**
+     * Get the MadelineProto API instance lazily.
+     */
+    protected function api(): API
+    {
+        return $this->api ??= $this->client->getApi();
     }
 
     /**
@@ -22,11 +31,19 @@ class TelegramFileService
     {
         try {
 
-            $filePath = $file instanceof UploadedFile
-                ? $file->getRealPath()
-                : $file;
+            if ($file instanceof UploadedFile) {
+                $filePath = $file->getRealPath();
+            } else {
+                $filePath = $file;
+            }
 
-            $result = $this->api->messages->sendMedia(
+            if (! $filePath || ! file_exists($filePath)) {
+                throw new \RuntimeException(
+                    'File does not exist.'
+                );
+            }
+
+            $result = $this->api()->messages->sendMedia(
                 peer: 'me',
                 media: [
                     '_'    => 'inputMediaUploadedDocument',
@@ -37,16 +54,18 @@ class TelegramFileService
 
             $message = null;
 
-            foreach ($result['updates'] as $update) {
+            foreach ($result['updates'] ?? [] as $update) {
 
-                if (($update['_'] ?? null) === 'updateNewMessage') {
-                    $message = $update['message'];
+                if (
+                    ($update['_'] ?? null)
+                    === 'updateNewMessage'
+                ) {
+                    $message = $update['message'] ?? null;
                     break;
                 }
-
             }
 
-            if (!$message) {
+            if (! $message) {
                 throw new \RuntimeException(
                     'Telegram message not found.'
                 );
@@ -56,20 +75,31 @@ class TelegramFileService
 
                 'success' => true,
 
-                'message' => 'File uploaded successfully.',
+                'message' =>
+                    'File uploaded successfully.',
 
                 'telegram_message_id' =>
-                    $message['id'],
+                    $message['id'] ?? null,
 
                 'telegram_chat_id' =>
-                    $message['peer_id'],
+                    $message['peer_id'] ?? null,
 
                 'telegram_file_id' =>
-                    $message['media']['document']['id'] ?? null,
+                    $message['media']['document']['id']
+                    ?? null,
 
             ];
 
         } catch (\Throwable $e) {
+
+            logger()->error(
+                'Telegram upload failed',
+                [
+                    'message' => $e->getMessage(),
+                    'file'    => $e->getFile(),
+                    'line'    => $e->getLine(),
+                ]
+            );
 
             return [
 
@@ -78,7 +108,6 @@ class TelegramFileService
                 'message' => $e->getMessage(),
 
             ];
-
         }
     }
 
@@ -89,49 +118,55 @@ class TelegramFileService
         int $messageId,
         int $chatId,
         string $destination
-    ): bool
-    {
+    ): bool {
+
         try {
 
-            $messages = $this->api->messages->getMessages(
-                id: [
-                    [
-                        '_'  => 'inputMessageID',
-                        'id' => $messageId,
+            $messages = $this->api()
+                ->messages
+                ->getMessages(
+                    id: [
+                        [
+                            '_'  => 'inputMessageID',
+                            'id' => $messageId,
+                        ],
                     ]
-                ]
-            );
+                );
+
+            $message = $messages['messages'][0] ?? null;
 
             if (
-                empty($messages['messages'][0]) ||
-                empty($messages['messages'][0]['media']) ||
-                empty($messages['messages'][0]['media']['document'])
+                ! $message ||
+                empty($message['media']) ||
+                empty($message['media']['document'])
             ) {
                 return false;
             }
 
-            $document = $messages['messages'][0]['media']['document'];
+            $document = $message['media']['document'];
 
-            $this->api->downloadToFile(
+            $this->api()->downloadToFile(
                 $document,
                 $destination
             );
 
-            clearstatcache();
+            clearstatcache(true, $destination);
 
             return file_exists($destination)
                 && filesize($destination) > 0;
 
         } catch (\Throwable $e) {
 
-            logger()->error('Telegram download failed', [
-                'message' => $e->getMessage(),
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine(),
-            ]);
+            logger()->error(
+                'Telegram download failed',
+                [
+                    'message' => $e->getMessage(),
+                    'file'    => $e->getFile(),
+                    'line'    => $e->getLine(),
+                ]
+            );
 
             return false;
-
         }
     }
 
@@ -142,48 +177,84 @@ class TelegramFileService
     {
         try {
 
-            $this->api->messages->deleteMessages(
-                revoke: true,
-                id: [$messageId]
-            );
+            $this->api()
+                ->messages
+                ->deleteMessages(
+                    revoke: true,
+                    id: [$messageId]
+                );
 
             return true;
 
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+
+            logger()->error(
+                'Telegram delete failed',
+                [
+                    'message' => $e->getMessage(),
+                    'message_id' => $messageId,
+                ]
+            );
 
             return false;
-
         }
     }
 
     /**
      * Get Telegram message.
      */
-    public function getMessage(int $messageId): ?array
-    {
+    public function getMessage(
+        int $messageId
+    ): ?array {
+
         try {
 
-            return $this->api->messages->getMessages(
-                id: [
-                    [
-                        '_'  => 'inputMessageID',
-                        'id' => $messageId,
+            return $this->api()
+                ->messages
+                ->getMessages(
+                    id: [
+                        [
+                            '_'  => 'inputMessageID',
+                            'id' => $messageId,
+                        ],
                     ]
+                );
+
+        } catch (\Throwable $e) {
+
+            logger()->error(
+                'Telegram get message failed',
+                [
+                    'message' => $e->getMessage(),
+                    'message_id' => $messageId,
                 ]
             );
 
-        } catch (\Throwable) {
-
             return null;
-
         }
     }
 
     /**
-     * Check authorization.
+     * Check Telegram authorization.
      */
     public function isAuthorized(): bool
     {
-        return $this->api->getAuthorization() !== API::NOT_LOGGED_IN;
+        try {
+
+            return $this->api()
+                ->getAuthorization()
+                !== API::NOT_LOGGED_IN;
+
+        } catch (\Throwable $e) {
+
+            logger()->error(
+                'Telegram authorization check failed',
+                [
+                    'message' => $e->getMessage(),
+                ]
+            );
+
+            return false;
+        }
     }
 }
