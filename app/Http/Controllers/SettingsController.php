@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\File;
 use App\Models\TelegramAccount;
+use App\Services\Telegram\TelegramAuthService;
+use App\Services\Telegram\TelegramClient;
 use Illuminate\Support\Facades\Auth;
 
 class SettingsController extends Controller
@@ -30,6 +32,20 @@ class SettingsController extends Controller
         $telegram = TelegramAccount::where('user_id', $user->id)
             ->where('is_active', true)
             ->first();
+
+        if ($telegram) {
+            try {
+                $client = new TelegramClient($telegram->session_file ?? 'user_' . $user->id . '.madeline');
+                $telegramIsAuthorized = (new TelegramAuthService($client))->isAuthorized();
+            } catch (\Throwable) {
+                $telegramIsAuthorized = false;
+            }
+
+            if (! $telegramIsAuthorized) {
+                $telegram->delete();
+                $telegram = null;
+            }
+        }
 
         $telegramConnected = $telegram !== null;
         $telegramPhone = $telegram?->phone_number;

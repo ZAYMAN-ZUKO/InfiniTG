@@ -60,6 +60,18 @@ class TelegramClient
 
         $settings->setLogger($logger);
 
+      $settings->getConnection()
+          ->setTimeout(60.0);
+
+       $settings->getConnection()
+           ->setUseDoH(true);
+
+        $settings->getConnection()
+            ->setIpv6(false);
+
+        $settings->getConnection()
+            ->setProtocol(\danog\MadelineProto\Stream\MTProtoTransport\HttpStream::class);
+
         $this->api = new API(
             $this->sessionPath,
             $settings
@@ -74,6 +86,11 @@ class TelegramClient
     public function getApi(): API
     {
         return $this->initialize();
+    }
+
+    public function getSessionPath(): string
+    {
+        return $this->sessionPath;
     }
 
     /**
@@ -109,4 +126,3 @@ class TelegramClient
             !== API::NOT_LOGGED_IN;
     }
 }
-

@@ -108,28 +108,74 @@ class TelegramAuthService
                 ]
             );
 
-            return [
-                'success' => true,
-                'message' => 'Telegram account connected successfully.',
-                'user' => $self,
-            ];
+           return [
+               'success' => true,
+               'message' => 'Telegram account connected successfully.',
+               'user' => $self,
+           ];
 
-        } catch (\Throwable $e) {
+       } catch (\Throwable $e) {
 
-            return [
-                'success' => false,
-                'message' => $e->getMessage(),
-            ];
+           return [
+               'success' => false,
+               'message' => $e->getMessage(),
+           ];
 
-        }
-    }
+       }
+   }
 
-    public function logout(): void
-    {
-        $this->api->logout();
-    }
+   public function logout(): array
+   {
+       try {
+           $this->api->logout();
 
-    public function isAuthorized(): bool
+           $sessionPath = $this->client->getSessionPath();
+
+           TelegramAccount::where('user_id', Auth::id())->delete();
+
+           session()->forget(['telegram_phone', 'telegram_session']);
+
+           $this->deleteDirectory($sessionPath);
+
+           return [
+               'success' => true,
+               'message' => 'Telegram account disconnected successfully.',
+           ];
+       } catch (\Throwable $e) {
+           logger()->error('Telegram disconnect failed', [
+               'message' => $e->getMessage(),
+               'file' => $e->getFile(),
+               'line' => $e->getLine(),
+           ]);
+
+           return [
+               'success' => false,
+               'message' => 'Failed to disconnect: ' . $e->getMessage(),
+           ];
+       }
+   }
+
+   protected function deleteDirectory(string $path): void
+   {
+       if (! is_dir($path)) {
+           return;
+       }
+
+       foreach (array_diff(scandir($path), ['.', '..']) as $item) {
+           $itemPath = $path . DIRECTORY_SEPARATOR . $item;
+
+           if (is_dir($itemPath)) {
+               $this->deleteDirectory($itemPath);
+               continue;
+           }
+
+           @unlink($itemPath);
+       }
+
+       @rmdir($path);
+   }
+
+   public function isAuthorized(): bool
     {
         return $this->api->getAuthorization() !== API::NOT_LOGGED_IN;
     }

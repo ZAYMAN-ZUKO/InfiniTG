@@ -60,11 +60,8 @@ class TelegramController extends Controller
 
     public function logout()
     {
-        $this->authService()->logout();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Telegram account disconnected.',
-        ]);
+        return response()->json(
+            $this->authService()->logout()
+        );
     }
 }

@@ -98,16 +98,11 @@ class TelegramFileService
                     'message' => $e->getMessage(),
                     'file'    => $e->getFile(),
                     'line'    => $e->getLine(),
+                    'trace'   => $e->getTraceAsString(),
                 ]
             );
 
-            return [
-
-                'success' => false,
-
-                'message' => $e->getMessage(),
-
-            ];
+            throw $e;
         }
     }
 
@@ -163,10 +158,11 @@ class TelegramFileService
                     'message' => $e->getMessage(),
                     'file'    => $e->getFile(),
                     'line'    => $e->getLine(),
+                    'trace'   => $e->getTraceAsString(),
                 ]
             );
 
-            return false;
+            throw $e;
         }
     }
 

@@ -1,8 +1,6 @@
-@extends('layouts.app')
+<?php $__env->startSection('title', 'Settings'); ?>
 
-@section('title', 'Settings')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 
 <div class="pagehead">
     <div>
@@ -11,16 +9,16 @@
     </div>
 </div>
 
-@if(session('success'))
-    <div class="alert alert-success" data-toast="{{ session('success') }}">
+<?php if(session('success')): ?>
+    <div class="alert alert-success" data-toast="<?php echo e(session('success')); ?>">
         <i data-lucide="check-circle" aria-hidden="true"></i>
-        <span>{{ session('success') }}</span>
+        <span><?php echo e(session('success')); ?></span>
     </div>
-@endif
+<?php endif; ?>
 
 <div class="settings-grid">
 
-    {{-- Profile --}}
+    
     <div class="panel">
         <div class="panel-head">
             <h3><i data-lucide="user" aria-hidden="true"></i> Profile</h3>
@@ -28,20 +26,20 @@
         <table class="info-table">
             <tr>
                 <td>Name</td>
-                <td>{{ $user->name }}</td>
+                <td><?php echo e($user->name); ?></td>
             </tr>
             <tr>
                 <td>Email</td>
-                <td>{{ $user->email }}</td>
+                <td><?php echo e($user->email); ?></td>
             </tr>
             <tr>
                 <td>Member since</td>
-                <td>{{ $user->created_at ? $user->created_at->format('d M Y') : 'â€”' }}</td>
+                <td><?php echo e($user->created_at ? $user->created_at->format('d M Y') : 'â€”'); ?></td>
             </tr>
         </table>
     </div>
 
-    {{-- Storage --}}
+    
     <div class="panel">
         <div class="panel-head">
             <h3><i data-lucide="hard-drive" aria-hidden="true"></i> Storage Information</h3>
@@ -55,7 +53,7 @@
                     <span>Storage</span>
                 </div>
             </div>
-            <p class="unlimited-storage-used">{{ $storageUsed ?? 0 }} MB currently used</p>
+            <p class="unlimited-storage-used"><?php echo e($storageUsed ?? 0); ?> MB currently used</p>
             <div class="unlimited-storage-powered">
                 <i data-lucide="send" aria-hidden="true"></i>
                 <span>Powered by Telegram</span>
@@ -65,29 +63,30 @@
         <table class="info-table" style="margin-top:14px">
             <tr>
                 <td>Total Files</td>
-                <td>{{ $totalFiles }}</td>
+                <td><?php echo e($totalFiles); ?></td>
             </tr>
             <tr>
                 <td>Favorite Files</td>
-                <td>{{ $favoriteCount }}</td>
+                <td><?php echo e($favoriteCount); ?></td>
             </tr>
             <tr>
                 <td>Trash Files</td>
-                <td>{{ $trashCount }}</td>
+                <td><?php echo e($trashCount); ?></td>
             </tr>
         </table>
     </div>
 
-    {{-- Telegram --}}
+    
     <div class="panel" id="telegram-panel">
         <div class="panel-head">
             <h3><i data-lucide="send" aria-hidden="true"></i> Telegram Account</h3>
-            <span id="telegram-state-badge" class="badge {{ $telegramConnected ? 'badge-success' : 'badge-warn' }}">
-                <i data-lucide="{{ $telegramConnected ? 'check' : 'alert-circle' }}" aria-hidden="true"></i>{{ $telegramConnected ? 'Connected' : 'Not Connected' }}
+            <span id="telegram-state-badge" class="badge <?php echo e($telegramConnected ? 'badge-success' : 'badge-warn'); ?>">
+                <i data-lucide="<?php echo e($telegramConnected ? 'check' : 'alert-circle'); ?>" aria-hidden="true"></i><?php echo e($telegramConnected ? 'Connected' : 'Not Connected'); ?>
+
             </span>
         </div>
 
-        <div id="telegram-connected-state" class="{{ $telegramConnected ? '' : 'is-hidden' }}">
+        <div id="telegram-connected-state" class="<?php echo e($telegramConnected ? '' : 'is-hidden'); ?>">
             <div class="tg-status">
                 <i data-lucide="check-circle" aria-hidden="true"></i>
                 <div>
@@ -99,11 +98,11 @@
             <table class="info-table">
                 <tr>
                     <td>Phone Number</td>
-                    <td id="telegram-phone-display">{{ $telegramPhone ?? 'â€”' }}</td>
+                    <td id="telegram-phone-display"><?php echo e($telegramPhone ?? 'â€”'); ?></td>
                 </tr>
                 <tr>
                     <td>Connected On</td>
-                    <td id="telegram-connected-at-display">{{ $telegramConnectedAt ? $telegramConnectedAt->format('d M Y') : 'â€”' }}</td>
+                    <td id="telegram-connected-at-display"><?php echo e($telegramConnectedAt ? $telegramConnectedAt->format('d M Y') : 'â€”'); ?></td>
                 </tr>
                 <tr>
                     <td>Status</td>
@@ -118,7 +117,7 @@
             </div>
         </div>
 
-        <div id="telegram-disconnected-state" class="{{ $telegramConnected ? 'is-hidden' : '' }}">
+        <div id="telegram-disconnected-state" class="<?php echo e($telegramConnected ? 'is-hidden' : ''); ?>">
             <div class="tg-status tg-off">
                 <i data-lucide="zap" aria-hidden="true"></i>
                 <div>
@@ -154,7 +153,7 @@
         </div>
    </div>
 
-   {{-- Security --}}
+   
     <div class="panel">
         <div class="panel-head">
             <h3><i data-lucide="shield" aria-hidden="true"></i> Security</h3>
@@ -167,7 +166,7 @@
         </button>
     </div>
 
-    {{-- About --}}
+    
     <div class="panel">
         <div class="panel-head">
             <h3><i data-lucide="info" aria-hidden="true"></i> About</h3>
@@ -183,20 +182,20 @@
             </tr>
             <tr>
                 <td>Framework</td>
-                <td>Laravel {{ app()->version() }}</td>
+                <td>Laravel <?php echo e(app()->version()); ?></td>
             </tr>
             <tr>
                 <td>PHP Version</td>
-                <td>{{ PHP_VERSION }}</td>
+                <td><?php echo e(PHP_VERSION); ?></td>
             </tr>
         </table>
     </div>
 
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
 (function () {
     var csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -277,7 +276,7 @@
                 btn.disabled = false;
                 return;
             }
-            var data = await post('{{ route('telegram.send-code') }}', { phone: phone });
+            var data = await post('<?php echo e(route('telegram.send-code')); ?>', { phone: phone });
             setStatus(data, !!data.success);
             btn.disabled = false;
         });
@@ -294,11 +293,11 @@
                 btn.disabled = false;
                 return;
             }
-            var data = await post('{{ route('telegram.verify-code') }}', { code: code });
+            var data = await post('<?php echo e(route('telegram.verify-code')); ?>', { code: code });
             if (data.requires_password) {
                 var password = prompt('Two-step verification is enabled. Enter your Telegram password:');
                 if (password) {
-                    data = await post('{{ route('telegram.verify-password') }}', { password: password });
+                    data = await post('<?php echo e(route('telegram.verify-password')); ?>', { password: password });
                 }
             }
             setStatus(data, !!data.success);
@@ -317,7 +316,7 @@
             if (window.lucide) { lucide.createIcons(); }
 
             try {
-                var data = await post('{{ route('telegram.logout') }}');
+                var data = await post('<?php echo e(route('telegram.logout')); ?>');
                 if (data.success) {
                     showDisconnectedState();
                 } else {
@@ -336,4 +335,6 @@
     }
 })();
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\infinitg\resources\views/settings.blade.php ENDPATH**/ ?>

@@ -201,7 +201,7 @@
                                 var first = Object.keys(resp.errors)[0];
                                 if (first) msg = resp.errors[first][0];
                             }
-                            if (msg) item.statusText = msg;
+                            if (msg) { item.statusText = msg; item.errorMessage = msg; }
                         } catch (e) { /* non-JSON error body */ }
                     }
                     updateRowStatus(item);
@@ -260,7 +260,9 @@
                             toast(successCount === total ? 'All files uploaded successfully!' : successCount + ' file(s) uploaded, ' + (total - successCount) + ' failed.', successCount === total ? 'success' : 'warn');
                             setTimeout(function () { window.location.reload(); }, 900);
                         } else {
-                            toast('Upload failed. Check the file types and sizes.', 'danger');
+                            var failed = pending.filter(function (i) { return i.status === 'error'; });
+                            var message = failed.map(function (i) { return i.errorMessage || i.statusText; }).filter(Boolean)[0];
+                            toast(message || 'Upload failed. Please try again.', 'danger');
                         }
                     }, 700);
                 });
