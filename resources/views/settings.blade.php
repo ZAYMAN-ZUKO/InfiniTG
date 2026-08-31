@@ -36,7 +36,7 @@
             </tr>
             <tr>
                 <td>Member since</td>
-                <td>{{ $user->created_at ? $user->created_at->format('d M Y') : 'â€”' }}</td>
+                <td>{{ $user->created_at ? $user->created_at->format('d M Y') : '-' }}</td>
             </tr>
         </table>
     </div>
@@ -99,11 +99,11 @@
             <table class="info-table">
                 <tr>
                     <td>Phone Number</td>
-                    <td id="telegram-phone-display">{{ $telegramPhone ?? 'â€”' }}</td>
+                    <td id="telegram-phone-display">{{ $telegramPhone ?? '-' }}</td>
                 </tr>
                 <tr>
                     <td>Connected On</td>
-                    <td id="telegram-connected-at-display">{{ $telegramConnectedAt ? $telegramConnectedAt->format('d M Y') : 'â€”' }}</td>
+                    <td id="telegram-connected-at-display">{{ $telegramConnectedAt ? $telegramConnectedAt->format('d M Y') : '-' }}</td>
                 </tr>
                 <tr>
                     <td>Status</td>
@@ -238,7 +238,7 @@
             badge.className = 'badge badge-success';
             badge.innerHTML = '<i data-lucide="check" aria-hidden="true"></i>Connected';
         }
-        if (phoneDisplay) phoneDisplay.textContent = data.user && data.user.phone ? data.user.phone : '—';
+        if (phoneDisplay) phoneDisplay.textContent = data.user && data.user.phone ? data.user.phone : '-';
         if (connectedAtDisplay) connectedAtDisplay.textContent = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
         if (responseBox) responseBox.classList.add('is-hidden');
         if (window.lucide) { lucide.createIcons(); }
