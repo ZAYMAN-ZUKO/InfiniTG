@@ -3,9 +3,9 @@
 namespace App\Services\Telegram;
 
 use danog\MadelineProto\API;
+use danog\MadelineProto\Logger as MadelineProtoLogger;
 use danog\MadelineProto\Settings;
 use danog\MadelineProto\Settings\Logger;
-use danog\MadelineProto\Logger as MadelineProtoLogger;
 
 class TelegramClient
 {
@@ -38,39 +38,22 @@ class TelegramClient
         $settings = new Settings();
 
         $settings->getAppInfo()
-            ->setApiId(
-                (int) config('storage.telegram.api_id')
-            )
-            ->setApiHash(
-                (string) config('storage.telegram.api_hash')
-            )
+            ->setApiId((int) config('storage.telegram.api_id'))
+            ->setApiHash((string) config('storage.telegram.api_hash'))
             ->setShowPrompt(false);
 
         $logger = new Logger();
-
         $logger->setType(MadelineProtoLogger::FILE_LOGGER);
-
-        $logger->setExtra(
-            storage_path('logs/madelineproto.log')
-        );
-
-        $logger->setLevel(
-            MadelineProtoLogger::LEVEL_WARNING
-        );
-
+        $logger->setExtra(storage_path('logs/madelineproto.log'));
+        $logger->setLevel(MadelineProtoLogger::LEVEL_WARNING);
         $settings->setLogger($logger);
 
-      $settings->getConnection()
-          ->setTimeout(60.0);
-
-       $settings->getConnection()
-           ->setUseDoH(true);
-
+        // Keep transport settings close to MadelineProto defaults. The previous
+        // forced HTTP/DoH transport was causing long waits/cancellations during
+        // the multi-request phone login flow on Railway.
         $settings->getConnection()
+            ->setTimeout(30.0)
             ->setIpv6(false);
-
-        $settings->getConnection()
-            ->setProtocol(\danog\MadelineProto\Stream\MTProtoTransport\HttpStream::class);
 
         $this->api = new API(
             $this->sessionPath,
@@ -80,9 +63,6 @@ class TelegramClient
         return $this->api;
     }
 
-    /**
-     * Get the MadelineProto API instance.
-     */
     public function getApi(): API
     {
         return $this->initialize();
@@ -93,33 +73,24 @@ class TelegramClient
         return $this->sessionPath;
     }
 
-    /**
-     * Start MadelineProto.
-     */
     public function start(): void
     {
         $this->initialize()->start();
     }
 
     /**
-     * Serialize the session.
+     * Force MadelineProto to persist the current auth state to the session.
      */
     public function serialize(): void
     {
         $this->initialize()->serialize();
     }
 
-    /**
-     * Logout from Telegram.
-     */
     public function logout(): void
     {
         $this->initialize()->logout();
     }
 
-    /**
-     * Check Telegram authorization status.
-     */
     public function isAuthorized(): bool
     {
         return $this->initialize()->getAuthorization()
