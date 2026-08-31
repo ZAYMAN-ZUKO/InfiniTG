@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\File;
 use App\Models\TelegramAccount;
-use App\Services\Telegram\TelegramAuthService;
-use App\Services\Telegram\TelegramClient;
 use Illuminate\Support\Facades\Auth;
 
 class SettingsController extends Controller
@@ -29,23 +27,14 @@ class SettingsController extends Controller
 
         $storageUsed = round($storageBytes / 1024 / 1024, 2);
 
+        // Treat the persisted TelegramAccount record as the UI source of truth.
+        // A transient MadelineProto authorization check on page load can return
+        // false even when the saved session still works for upload/download.
+        // Do not delete a valid account record merely because a reload-time
+        // probe fails.
         $telegram = TelegramAccount::where('user_id', $user->id)
             ->where('is_active', true)
             ->first();
-
-        if ($telegram) {
-            try {
-                $client = new TelegramClient($telegram->session_file ?? 'user_' . $user->id . '.madeline');
-                $telegramIsAuthorized = (new TelegramAuthService($client))->isAuthorized();
-            } catch (\Throwable) {
-                $telegramIsAuthorized = false;
-            }
-
-            if (! $telegramIsAuthorized) {
-                $telegram->delete();
-                $telegram = null;
-            }
-        }
 
         $telegramConnected = $telegram !== null;
         $telegramPhone = $telegram?->phone_number;
