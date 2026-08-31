@@ -19,36 +19,67 @@ class TelegramAuthService
     public function sendCode(string $phoneNumber): array
     {
         try {
+            logger()->info('Telegram phone login starting', ['user_id' => Auth::id()]);
 
-            $result = $this->api->phoneLogin($phoneNumber);
+            $this->api->phoneLogin($phoneNumber);
+
+            // phoneLogin changes MadelineProto's authorization state to
+            // WAITING_CODE. Persist it before this HTTP request ends so the
+            // next verify-code request can restore that exact state.
+            $this->client->serialize();
 
             session([
                 'telegram_phone' => $phoneNumber,
-                'telegram_session' => $result,
+                'telegram_auth_pending' => true,
+            ]);
+            session()->save();
+
+            logger()->info('Telegram phone login waiting for code', [
+                'user_id' => Auth::id(),
+                'authorization' => $this->api->getAuthorization(),
             ]);
 
             return [
                 'success' => true,
                 'message' => 'Verification code sent successfully.',
             ];
-
         } catch (\Throwable $e) {
+            logger()->error('Telegram phone login failed', [
+                'user_id' => Auth::id(),
+                'message' => $e->getMessage(),
+            ]);
 
             return [
                 'success' => false,
                 'message' => $e->getMessage(),
             ];
-
         }
     }
 
     public function verifyCode(string $code): array
     {
         try {
+            $authorization = $this->api->getAuthorization();
+
+            logger()->info('Telegram code verification starting', [
+                'user_id' => Auth::id(),
+                'authorization' => $authorization,
+                'pending' => (bool) session('telegram_auth_pending', false),
+            ]);
+
+            if ($authorization !== API::WAITING_CODE) {
+                return [
+                    'success' => false,
+                    'message' => 'Telegram login session expired. Please send a new code and try again.',
+                ];
+            }
 
             $result = $this->api->completePhoneLogin($code);
+            $this->client->serialize();
 
             if (($result['_'] ?? '') === 'account.password') {
+                session(['telegram_auth_pending' => true]);
+                session()->save();
 
                 return [
                     'success' => false,
@@ -58,124 +89,126 @@ class TelegramAuthService
             }
 
             $self = $this->api->getSelf();
-            
 
             TelegramAccount::updateOrCreate(
-    [
-        'user_id' => Auth::id(),
-    ],
-    [
-        'phone_number' => $self['phone'],
-        'session_file' => 'user_' . Auth::id() . '.madeline',
-        'is_active' => true,
-        'last_login_at' => now(),
-    ]
-);
-
-            return [
-                'success' => true,
-                'message' => 'Telegram account connected successfully.',
-                'user' => $self,
-            ];
-
-        } catch (\Throwable $e) {
-
-            return [
-                'success' => false,
-                'message' => $e->getMessage(),
-            ];
-
-        }
-    }
-
-    public function verifyPassword(string $password): array
-    {
-        try {
-
-            $this->api->complete2falogin($password);
-
-            $self = $this->api->getSelf();
-
-            TelegramAccount::updateOrCreate(
+                ['user_id' => Auth::id()],
                 [
-                    'user_id' => Auth::id(),
-                ],
-                [
-                    'phone_number' => $self['phone'] ?? null,
+                    'phone_number' => $self['phone'] ?? session('telegram_phone'),
                     'session_file' => 'user_' . Auth::id() . '.madeline',
                     'is_active' => true,
                     'last_login_at' => now(),
                 ]
             );
 
-           return [
-               'success' => true,
-               'message' => 'Telegram account connected successfully.',
-               'user' => $self,
-           ];
+            session()->forget(['telegram_phone', 'telegram_auth_pending']);
 
-       } catch (\Throwable $e) {
+            return [
+                'success' => true,
+                'message' => 'Telegram account connected successfully.',
+                'user' => $self,
+            ];
+        } catch (\Throwable $e) {
+            logger()->error('Telegram code verification failed', [
+                'user_id' => Auth::id(),
+                'message' => $e->getMessage(),
+            ]);
 
-           return [
-               'success' => false,
-               'message' => $e->getMessage(),
-           ];
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
+    }
 
-       }
-   }
+    public function verifyPassword(string $password): array
+    {
+        try {
+            $this->api->complete2falogin($password);
+            $this->client->serialize();
 
-   public function logout(): array
-   {
-       try {
-           $this->api->logout();
+            $self = $this->api->getSelf();
 
-           $sessionPath = $this->client->getSessionPath();
+            TelegramAccount::updateOrCreate(
+                ['user_id' => Auth::id()],
+                [
+                    'phone_number' => $self['phone'] ?? session('telegram_phone'),
+                    'session_file' => 'user_' . Auth::id() . '.madeline',
+                    'is_active' => true,
+                    'last_login_at' => now(),
+                ]
+            );
 
-           TelegramAccount::where('user_id', Auth::id())->delete();
+            session()->forget(['telegram_phone', 'telegram_auth_pending']);
 
-           session()->forget(['telegram_phone', 'telegram_session']);
+            return [
+                'success' => true,
+                'message' => 'Telegram account connected successfully.',
+                'user' => $self,
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
+    }
 
-           $this->deleteDirectory($sessionPath);
+    public function logout(): array
+    {
+        try {
+            $this->api->logout();
 
-           return [
-               'success' => true,
-               'message' => 'Telegram account disconnected successfully.',
-           ];
-       } catch (\Throwable $e) {
-           logger()->error('Telegram disconnect failed', [
-               'message' => $e->getMessage(),
-               'file' => $e->getFile(),
-               'line' => $e->getLine(),
-           ]);
+            $sessionPath = $this->client->getSessionPath();
 
-           return [
-               'success' => false,
-               'message' => 'Failed to disconnect: ' . $e->getMessage(),
-           ];
-       }
-   }
+            TelegramAccount::where('user_id', Auth::id())->delete();
 
-   protected function deleteDirectory(string $path): void
-   {
-       if (! is_dir($path)) {
-           return;
-       }
+            session()->forget([
+                'telegram_phone',
+                'telegram_session',
+                'telegram_auth_pending',
+            ]);
 
-       foreach (array_diff(scandir($path), ['.', '..']) as $item) {
-           $itemPath = $path . DIRECTORY_SEPARATOR . $item;
+            $this->deleteDirectory($sessionPath);
 
-           if (is_dir($itemPath)) {
-               $this->deleteDirectory($itemPath);
-               continue;
-           }
+            return [
+                'success' => true,
+                'message' => 'Telegram account disconnected successfully.',
+            ];
+        } catch (\Throwable $e) {
+            logger()->error('Telegram disconnect failed', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
 
-           @unlink($itemPath);
-       }
+            return [
+                'success' => false,
+                'message' => 'Failed to disconnect: ' . $e->getMessage(),
+            ];
+        }
+    }
 
-       @rmdir($path);
-   }
+    protected function deleteDirectory(string $path): void
+    {
+        if (! is_dir($path)) {
+            return;
+        }
 
-   public function isAuthorized(): bool
+        foreach (array_diff(scandir($path), ['.', '..']) as $item) {
+            $itemPath = $path . DIRECTORY_SEPARATOR . $item;
+
+            if (is_dir($itemPath)) {
+                $this->deleteDirectory($itemPath);
+                continue;
+            }
+
+            @unlink($itemPath);
+        }
+
+        @rmdir($path);
+    }
+
+    public function isAuthorized(): bool
     {
         return $this->api->getAuthorization() !== API::NOT_LOGGED_IN;
     }
